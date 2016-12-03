@@ -19,9 +19,14 @@ const (
 	defaultTemplateEnumType = "templateEnum"
 )
 
+// Context is ...
 type Context struct {
-	Debug        bool `toml:"-"`
-	FormatOutput bool `toml:"-"`
+	// Do not cache the templates.
+	// A new template will be created on every page.ExecuteTemplate.
+	NoCache bool
+
+	// Do not format the generated code with go/format.
+	NoGoFormat bool
 
 	// Package name to use in the generated code.
 	PackageName string
@@ -34,7 +39,7 @@ type Context struct {
 	// Name of the template.FuncMap variable used in template creation.
 	// The variable must be defined in another file of the same package
 	// (es. "templates/func-map.go").
-	// If empty, no funcMap will be used
+	// If empty, no funcMap will be used.
 	FuncMap string
 
 	// Name of the TemplateEnum type definition
@@ -62,11 +67,13 @@ type Context struct {
 	}
 }
 
+// dataType contains all the information passed to the template used to
+// generate the module in WriteModule
 type dataType struct {
 	ProgramName      string
 	Timestamp        time.Time
-	Debug            bool
-	FormatOutput     bool
+	NoCache          bool
+	NoGoFormat       bool
 	AssetManager     string
 	PackageName      string
 	FuncMap          string
@@ -74,15 +81,17 @@ type dataType struct {
 	TemplateEnumType string
 	PageEnumType     string
 
-	Pages     []string            // page names (sorted)
-	Bases     []string            // base names
-	Templates []string            // used template names (sorted)
-	PI2BI     []int               // page-index to base-index
-	PI2TI     []int               // page-index to template-index
-	T2F       map[string][]string // mapping from template name -> (file1, file2, ...)
+	Pages     []string // page names (sorted)
+	Bases     []string // base names
+	Templates []string // used template names (sorted)
+	Files     []string // used files
+	PI2BI     []int    // page-index to base-index
+	PI2TI     []int    // page-index to template-index
+	TI2AFI    [][]int  // template-index to array of file-index
 
-	assetMngr AssetMngr
+	//T2F       map[string][]string // mapping from template name -> (file1, file2, ...)
 
+	assetMngr      AssetMngr
 	pageEnumPrefix string
 	pageEnumSuffix string
 }
@@ -94,6 +103,8 @@ func nvl(a, b string) string {
 	return a
 }
 
+// checkAndPrepare check for errors in the Context's parameters.
+// If no error is found, returns the dataTaype object created based on the Context
 func (ctx *Context) checkAndPrepare() (*dataType, error) {
 	var (
 		err       error
@@ -141,7 +152,8 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 	}
 
 	// resolve used templates
-	t2f, err := resolveIncludes(ctx.Templates, templates.ToSlice())
+	// mapping from template name -> (file1, file2, ...)
+	t2af, err := resolveIncludes(ctx.Templates, templates.ToSlice())
 	if err != nil {
 		return nil, err
 	}
@@ -156,11 +168,25 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 		pi2bi[pageIdx] = bases.Add(baseName)
 	}
 
+	// files
+	files := NewOrderedSetString()
+	// mapping from template-index to array of file-index
+	ti2afi := make([][]int, templates.Len())
+
+	for tmplIdx, tmplName := range templates.ToSlice() {
+		fileNames := t2af[tmplName]
+		fileIdxs := make([]int, len(fileNames))
+		for j, fileName := range fileNames {
+			fileIdxs[j] = files.Add(fileName)
+		}
+		ti2afi[tmplIdx] = fileIdxs
+	}
+
 	data := &dataType{
 		ProgramName:      "gentmpl",
 		Timestamp:        time.Now(),
-		Debug:            ctx.Debug,
-		FormatOutput:     ctx.FormatOutput,
+		NoCache:          ctx.NoCache,
+		NoGoFormat:       ctx.NoGoFormat,
 		AssetManager:     ctx.AssetManager,
 		PackageName:      nvl(ctx.PackageName, defaultPackageName),
 		TemplateEnumType: nvl(ctx.TemplateEnumType, defaultTemplateEnumType),
@@ -171,9 +197,11 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 		Pages:     pages.ToSlice(),
 		Templates: templates.ToSlice(),
 		Bases:     bases.ToSlice(),
+		Files:     files.ToSlice(),
 		PI2TI:     pi2ti,
 		PI2BI:     pi2bi,
-		T2F:       t2f,
+		TI2AFI:    ti2afi,
+		//T2F:       t2f,
 
 		assetMngr:      assetMngr,
 		pageEnumPrefix: ctx.PageEnumPrefix,
@@ -190,34 +218,6 @@ func (d *dataType) PageName(name string) string {
 
 func (d *dataType) UseGoBindata() bool {
 	return d.assetMngr == AssetMngrGoBindata
-}
-
-func (d *dataType) PrintInitVars(sFiles, sIdxs string) string {
-	// array of files
-	files := NewOrderedSetString()
-	// mapping from template-index to files-index
-	ti2fi := make([][]int, len(d.Templates))
-
-	for tmplIdx, tmplName := range d.Templates {
-		fileNames := d.T2F[tmplName]
-		fileIdxs := make([]int, len(fileNames))
-		for j, fileName := range fileNames {
-			fileIdxs[j] = files.Add(fileName)
-		}
-		ti2fi[tmplIdx] = fileIdxs
-	}
-
-	w := new(bytes.Buffer)
-	fmt.Fprintln(w, "// files paths")
-	fmt.Fprintf(w, "var %s = [...]string{%s}\n", sFiles, astr2str(files.ToSlice()))
-
-	fmt.Fprintln(w, "// indexes of the files of each template")
-	fmt.Fprintf(w, "var %s = [...][]%s{\n", sIdxs, uint(files.Len()))
-	for tmplIdx, fileIdxs := range ti2fi {
-		fmt.Fprintf(w, "  {%s}, // %s\n", aint2str(fileIdxs), d.Templates[tmplIdx])
-	}
-	fmt.Fprintf(w, "}")
-	return w.String()
 }
 
 func (ctx *Context) WriteModule(w io.Writer) error {
@@ -249,14 +249,14 @@ func (ctx *Context) WriteModule(w io.Writer) error {
 		return err
 	}
 
-	if ctx.FormatOutput {
+	if ctx.NoGoFormat {
+		p = buf.Bytes()
+	} else {
 		// execute format source
 		p, err = format.Source(buf.Bytes())
 		if err != nil {
 			return fmt.Errorf("Formatting source: %s", err.Error())
 		}
-	} else {
-		p = buf.Bytes()
 	}
 
 	_, err = w.Write(p)
