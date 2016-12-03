@@ -1,9 +1,11 @@
 # templates configuration file (TOML)
 
-# debug = true
-format_output = true
 output_file = "example/templates.go"
-folder = "tmpl"
+
+# no_cache = false
+# no_go_format = false
+
+template_base_dir = "tmpl"
 
 package_name = "main"
 
@@ -14,8 +16,8 @@ asset_manager = "Go-Bindata"
 
 
 # page_enum_type = "PageEnum"
-page_enum_prefix = "Page"
-# page_enum_suffix = "Suffix"
+# page_enum_prefix = "Page"
+# page_enum_suffix = ""
 
 # Name of the variable used as funcMap.
 # The variable must be defined in another file of the same package (es. "templates/func-map.go")

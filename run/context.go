@@ -1,3 +1,4 @@
+//go:generate go-bindata -pkg run -nometadata context.tmpl
 package run
 
 import (
@@ -11,11 +12,14 @@ import (
 )
 
 const (
-	// name of the template file used to generate the module
-	templateFile = "templates.tmpl"
+	// path of the template file
+	templateFile = "context.tmpl"
+	// name of the template to generate the package
+	templateName = "module"
 
 	defaultPackageName      = "templates"
 	defaultPageEnumType     = "PageEnum"
+	defaultPagePrefix       = "Page"
 	defaultTemplateEnumType = "templateEnum"
 )
 
@@ -88,8 +92,6 @@ type dataType struct {
 	PI2BI     []int    // page-index to base-index
 	PI2TI     []int    // page-index to template-index
 	TI2AFI    [][]int  // template-index to array of file-index
-
-	//T2F       map[string][]string // mapping from template name -> (file1, file2, ...)
 
 	assetMngr      AssetMngr
 	pageEnumPrefix string
@@ -201,17 +203,16 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 		PI2TI:     pi2ti,
 		PI2BI:     pi2bi,
 		TI2AFI:    ti2afi,
-		//T2F:       t2f,
 
 		assetMngr:      assetMngr,
-		pageEnumPrefix: ctx.PageEnumPrefix,
+		pageEnumPrefix: nvl(ctx.PageEnumPrefix, defaultPagePrefix),
 		pageEnumSuffix: ctx.PageEnumSuffix,
 	}
 
 	return data, nil
 }
 
-// PageName returns the PageEnum constant of the page with given name
+// PageName returns the PageEnum constant of the page with given name.
 func (d *dataType) PageName(name string) string {
 	return d.pageEnumPrefix + name + d.pageEnumSuffix
 }
@@ -220,6 +221,7 @@ func (d *dataType) UseGoBindata() bool {
 	return d.assetMngr == AssetMngrGoBindata
 }
 
+// WriteModule prints the generated module to writer.
 func (ctx *Context) WriteModule(w io.Writer) error {
 
 	var (
@@ -238,13 +240,19 @@ func (ctx *Context) WriteModule(w io.Writer) error {
 		"astr2str": astr2str,
 		"aint2str": aint2str,
 	}
+	/*
+		// create a new template and parse templateFile into it
+		t, err := template.New("").Funcs(templateFuncMap).ParseFiles(templateFile)
+		if err != nil {
+			return err
+		}
+	*/
 	// create a new template and parse templateFile into it
-	t, err := template.New("").Funcs(templateFuncMap).ParseFiles(templateFile)
-	if err != nil {
-		return err
-	}
+	t := template.New("").Funcs(templateFuncMap)
+	t.Parse(string(MustAsset(templateFile)))
 
-	err = t.ExecuteTemplate(&buf, "module", data)
+	// execute the named template
+	err = t.ExecuteTemplate(&buf, templateName, data)
 	if err != nil {
 		return err
 	}
@@ -259,6 +267,7 @@ func (ctx *Context) WriteModule(w io.Writer) error {
 		}
 	}
 
+	// write bytes to writer
 	_, err = w.Write(p)
 
 	return err

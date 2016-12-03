@@ -1,0 +1,3 @@
+To generate bindata.go use the:
+	go-bindata -nometadata -pkg run templates.tmpl
+

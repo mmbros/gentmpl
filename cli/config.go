@@ -2,184 +2,123 @@
 package cli
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
-	"go/format"
+	"io"
 	"io/ioutil"
 	"os"
-	"strings"
 
+	"github.com/mmbros/gentmpl/run"
 	"github.com/naoina/toml"
 )
 
 const (
 	// name of the command line parameters
-	parametersclOutput = "output"
-	clDebug            = "debug"
-	clConfig           = "config"
-	clPackage          = "pkg"
+	clConfig  = "c"
+	clOutput  = "o"
+	clPackage = "p"
+	clDebug   = "d"
 
-	defaultConfigFile       = "templates.config.toml"
-	defaultPageEnumType     = "PageEnum"
-	defaultTemplateEnumType = "templateEnum"
-	defaultOutputFile       = ""
-	defaultPackageName      = "templates"
-	defaultDefaultPageBase  = "base"
-	defaultDebug            = false
+	defaultConfigFile  = "templates.config.toml"
+	defaultOutputFile  = "" // if empty use StdOut
+	defaultPackageName = "templates"
 )
 
-type AssetMngr int
-
-const (
-	AssetMngrNone AssetMngr = iota
-	AssetMngrGoBindata
-)
-
-type Config struct {
-	OutputFile   string
-	FormatOutput bool
-	Debug        bool
-
-	FuncMap      string
-	AssetManager string `toml:"omitempty"`
-	AssetMngr    int    `toml:"-"` //ignore field in reading config file
-
-	Folder          string
-	PackageName     string
-	DefaultPageBase string
-	PageEnumType    string
-	PageEnumPrefix  string
-	PageEnumSuffix  string
-	Templates       map[string][]string
-	Pages           map[string]struct {
-		Template string
-		Base     string
-	}
+type config struct {
+	run.Context
+	OutputFile string
 }
 
-func parseAssetMngr(s string) (int, error) {
-	switch strings.ToLower(s) {
-	case "go-bindata":
-		return AssetMngrGoBindata, nil
-	case "none", "":
-		return AssetMngrNone, nil
+func unmarshalConfig(data []byte) (*config, error) {
+	// parse config file
+	var cfg config
+	if err := toml.Unmarshal(data, &cfg); err != nil {
+		return nil, err
 	}
-	return AssetMngrNone, fmt.Errorf("Invalid asset_manager value: %q", s)
-}
-
-func (cfg *Config) resolveIncludes(astr []string) (map[string][]string, error) {
-	return resolveIncludes(cfg.Templates, astr)
+	return &cfg, nil
 }
 
 // loadConfigFromFile returns the configuration from a configuration file
-func loadConfigFromFile(path string) (*Config, error) {
-	// error function
-	exitWithErr := func(err error) (*Config, error) {
-		return nil, err
-	}
-
+func loadConfigFromFile(path string) (*config, error) {
 	// open config file
 	f, err := os.Open(path)
 	if err != nil {
-		return exitWithErr(err)
+		return nil, err
 	}
 	defer f.Close()
 	// read config file
 	buf, err := ioutil.ReadAll(f)
 	if err != nil {
-		return exitWithErr(err)
+		return nil, err
 	}
-	// parse config file
-	var config Config
-	if err := toml.Unmarshal(buf, &config); err != nil {
-		return exitWithErr(err)
-	}
-
-	if am, err := parseAssetMngr(config.AssetManager); err != nil {
-		return exitWithErr(err)
-	} else {
-		config.AssetMngr = am
-	}
-
-	return &config, nil
+	return unmarshalConfig(buf)
 }
 
-// LoadConfig returns the configuration from command line parameters,
+// parseConfig returns the configuration from command line parameters,
 // config parameters and defaults
-func LoadConfig() (*Config, error) {
+func parseConfig() (*config, error) {
 	// command line arguments
 	pConfigFile := flag.String(clConfig, defaultConfigFile, "Templates configuration file.")
 	pOutFile := flag.String(clOutput, defaultOutputFile, "Output file.")
-	filepPkgName := flag.String(clPackage, defaultPackageName, "Package name to use in the generated code.")
+	pPkgName := flag.String(clPackage, defaultPackageName, "Package name to use in the generated code.")
 	pDebug := flag.Bool(clDebug, false, "Do not embed the assets, but provide the embedding API. Contents will still be loaded from disk.")
 	flag.Parse()
 
 	// init config from the config file
-	config, err := loadConfigFromFile(*pConfigFile)
+	cfg, err := loadConfigFromFile(*pConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("LoadConfig: %s", err.Error())
 	}
 
 	// update config settings with command line parameters and set defaults
-	if *pOutFile != defaultOutputFile || config.OutputFile == "" {
-		config.OutputFile = *pOutFile
+	if *pOutFile != defaultOutputFile || cfg.OutputFile == "" {
+		cfg.OutputFile = *pOutFile
 	}
-	if *pPkgName != defaultPackageName || config.PackageName == "" {
-		config.PackageName = *pPkgName
+	if *pPkgName != defaultPackageName || cfg.PackageName == "" {
+		cfg.PackageName = *pPkgName
 	}
-	if *pDebug != defaultDebug {
-		config.Debug = *pDebug
-	}
-	if config.PageEnumType == "" {
-		config.PageEnumType = defaultPageEnumType
-	}
-	if config.DefaultPageBase == "" {
-		config.DefaultPageBase = defaultDefaultPageBase
+	if *pDebug {
+		cfg.NoGoFormat = true
+		cfg.NoCache = true
 	}
 
-	return config, nil
+	return cfg, nil
 }
 
-func (cfg *Config) WriteModule() error {
+func (cfg *config) WriteModule() error {
+	var w io.Writer
 
-	var (
-		buf  bytes.Buffer // A Buffer needs no initialization.
-		byt  []byte
-		err  error
-		file *os.File
-	)
-	ctx := NewContext(cfg)
+	ctx := cfg.Context
 
-	//w := os.Stdout
-	w := &buf
-
-	// execute write module
-	if err = ctx.PrintModule(w); err != nil {
-		return fmt.Errorf("Print module: %s", err.Error())
-	}
-
-	if cfg.FormatOutput {
-		// execute format source
-		byt, err = format.Source(buf.Bytes())
-		if err != nil {
-			return fmt.Errorf("Formatting source: %s", err.Error())
-		}
+	if cfg.OutputFile == "" {
+		w = os.Stdout
 	} else {
-		byt = buf.Bytes()
-	}
-
-	if cfg.OutputFile != "" {
 		// write buffer to output file
-		file, err = os.OpenFile(cfg.OutputFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
+		file, err := os.OpenFile(cfg.OutputFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
 		if err != nil {
 			return fmt.Errorf("Error writing output file: %s", err.Error())
 		}
 		defer file.Close()
-	} else {
-		file = os.Stdout
+		w = file
 	}
 
-	file.Write(byt)
-	return nil
+	return ctx.WriteModule(w)
+}
+
+// run parse cmd line, read the config file and generate the package
+func Run() int {
+
+	cfg, err := parseConfig()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		return 1
+	}
+
+	err = cfg.WriteModule()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		return 1
+	}
+
+	return 0
 }
