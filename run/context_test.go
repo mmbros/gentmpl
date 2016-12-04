@@ -7,6 +7,16 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jteeuwen/go-bindata"
+)
+
+const (
+	// tmp folder prefix
+	testDirPrefix = "gentmpl_"
+
+	// base template directory
+	baseTemplateDir = "tmpl"
 )
 
 var templates = map[string][]string{
@@ -26,7 +36,28 @@ var pages = map[string]struct {
 	"Inh2": {"inh2", ""},
 }
 
-func writefile(fullpath, content string) error {
+var results = map[string]string{
+	"Pag1": "<html><head></head><body>Page 1</body></html>",
+	"Pag2": "<html><head></head><body>Page 2</body></html>",
+	"Pag3": "<html><head></head><body>Page 3</body></html>",
+	"Inh1": "<html><head></head><body>content 1</body></html>",
+	"Inh2": "<html><head></head><body>content 2</body></html>",
+}
+
+var fileinfos = []struct {
+	path    string
+	content string
+}{
+	{"flat/header.tmpl", `{{define "header"}}<html><head></head><body>{{end}}`},
+	{"flat/footer.tmpl", `{{define "footer"}}</body></html>{{end}}`},
+	{"flat/page1.tmpl", `{{define "page-1"}}{{template "header"}}Page 1{{template "footer"}}{{end}}`},
+	{"flat/page2and3.tmpl", `{{define "page-2"}}{{template "header"}}Page 2{{template "footer"}}{{end}}{{define "page-3"}}{{template "header"}}Page 3{{template "footer"}}{{end}}`},
+	{"inheritance/base.tmpl", `<html><head></head><body>{{template "content" .}}</body></html>`},
+	{"inheritance/content1.tmpl", `{{define "content"}}content 1{{end}}`},
+	{"inheritance/content2.tmpl", `{{define "content"}}content 2{{end}}`},
+}
+
+func writeFile(fullpath, content string) error {
 	folder := filepath.Dir(fullpath)
 	if err := os.MkdirAll(folder, 0777); err != nil {
 		return err
@@ -37,8 +68,27 @@ func writefile(fullpath, content string) error {
 	return nil
 }
 
-func ErrorLike(err error, msg string) bool {
+func errorLike(err error, msg string) bool {
 	return strings.Contains(err.Error(), msg)
+}
+
+// create a tmp dir with the template files
+// returns the name of the created folder
+func setupDirTemplates() string {
+	// creates a tmp root directory
+	tmpdir, err := ioutil.TempDir("", testDirPrefix)
+	if err != nil {
+		panic(err)
+	}
+	// creates the templates files
+	for _, fi := range fileinfos {
+		out := filepath.Join(tmpdir, baseTemplateDir, fi.path)
+		if err := writeFile(out, fi.content); err != nil {
+			panic(err)
+		}
+	}
+	// return the name of the tmp root directory
+	return tmpdir
 }
 
 func TestCheck(t *testing.T) {
@@ -51,7 +101,7 @@ func TestCheck(t *testing.T) {
 		if err == nil {
 			t.Errorf("%s: expected error like %q; no error found", testCase, errLike)
 		}
-		if !ErrorLike(err, errLike) {
+		if !errorLike(err, errLike) {
 			t.Errorf("%s: expected error like %q; found error %q", testCase, errLike, err.Error())
 		}
 	}
@@ -109,11 +159,133 @@ func TestWritePackage(t *testing.T) {
 	}
 }
 
-func TestWriteToml(t *testing.T) {
+func TestWriteConfig(t *testing.T) {
 	ctx := &Context{Pages: pages, Templates: templates}
 	w := new(bytes.Buffer)
-	err := ctx.WriteToml(w)
+	err := ctx.WriteConfig(w)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
+}
+func ctx2str(ctx *Context) string {
+	var b bytes.Buffer
+	writeBool := func(x bool) {
+		ch := '0'
+		if x {
+			ch = '1'
+		}
+		b.WriteRune(ch)
+	}
+	writeSep := func() { b.WriteRune('-') }
+
+	b.WriteString("as")
+	writeBool(strings.ToLower(ctx.AssetManager) == "go-bindata")
+
+	writeSep()
+	b.WriteString("nc")
+	writeBool(ctx.NoCache)
+
+	writeSep()
+	b.WriteString("fm")
+	writeBool(ctx.FuncMap != "")
+
+	//writeSep()
+	//b.WriteString("nf")
+	//writeBool(ctx.NoGoFormat)
+
+	return b.String()
+
+}
+
+func writeBindata(out string, ctx *Context) error {
+	c := bindata.NewConfig()
+	c.Debug = ctx.NoCache
+	c.Output = out
+	c.Prefix = filepath.Clean(filepath.Join(filepath.Dir(out), "..", baseTemplateDir))
+	c.Package = "main"
+	c.Input = []bindata.InputConfig{
+		bindata.InputConfig{
+			Path:      c.Prefix,
+			Recursive: true,
+		},
+	}
+
+	return bindata.Translate(c)
+}
+func writeMain(out string, ctx *Context) error {
+	const text = `package main
+
+import (
+	"fmt"
+	"os"
+)
+
+func main(){
+	var page PageEnum = PageInh1
+	wr := os.Stdout
+
+	if err := page.Execute(wr, nil); err != nil {
+		fmt.Print(err)
+	}
+}
+`
+	return writeFile(out, text)
+
+}
+
+func TestAll(t *testing.T) {
+
+	// setup
+	tmpdir := setupDirTemplates()
+	ctx := &Context{
+		PackageName:     "main",
+		TemplateBaseDir: filepath.Join("..", baseTemplateDir),
+		Pages:           pages,
+		Templates:       templates,
+	}
+
+	buf := new(bytes.Buffer)
+
+	for _, nocache := range []bool{false, true} {
+		ctx.NoCache = nocache
+
+		for _, assetmngr := range []string{"", "go-bindata"} {
+			ctx.AssetManager = assetmngr
+
+			for _, funcmap := range []string{"", "funcMap"} {
+				ctx.FuncMap = funcmap
+
+				folder := ctx2str(ctx)
+
+				// template.go
+				out := filepath.Join(tmpdir, folder, "templates.go")
+				buf.Reset()
+				err := ctx.WritePackage(buf)
+				if err == nil {
+					err = writeFile(out, buf.String())
+				}
+				if err != nil {
+					t.Errorf("%s/template %s", folder, err.Error())
+				}
+
+				// bindata.go
+				if assetmngr != "" {
+					out = filepath.Join(tmpdir, folder, "bindata.go")
+					err = writeBindata(out, ctx)
+					if err != nil {
+						t.Errorf("%s/bindata %s", folder, err.Error())
+					}
+				}
+
+				// main.go
+				out = filepath.Join(tmpdir, folder, "main.go")
+				err = writeMain(out, ctx)
+				if err != nil {
+					t.Errorf("%s/main %s", folder, err.Error())
+				}
+			}
+		}
+	}
+	// clean up
+	//defer os.RemoveAll(tmpdir)
 }
