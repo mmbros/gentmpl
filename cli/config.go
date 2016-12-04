@@ -144,7 +144,7 @@ func genPackage(cfg *config) error {
 	return genOutput(cfg.OutputFile, ctx.WritePackage)
 }
 
-func genConfig(output string) error {
+func GenConfig(output string) error {
 	const text = `
 [templates]
 flat = ["flat/footer.tmpl", "flat/header.tmpl", "flat/page1.tmpl", "flat/page2and3.tmpl"]
@@ -164,7 +164,7 @@ Inh2 = {template="inh2"}
 		return err
 	}
 	ctx := cfg.Context
-	return genOutput(output, ctx.WriteToml)
+	return genOutput(output, ctx.WriteConfig)
 }
 
 // run parse cmd line, read the config file and generate the package
@@ -179,7 +179,7 @@ func Run() int {
 	}
 
 	if args.genConfig {
-		err := genConfig(args.output)
+		err := GenConfig(args.output)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			return 2

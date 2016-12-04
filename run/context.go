@@ -271,7 +271,7 @@ func (ctx *Context) WritePackage(w io.Writer) error {
 	return err
 }
 
-func (ctx *Context) WriteToml(w io.Writer) error {
+func (ctx *Context) WriteConfig(w io.Writer) error {
 	t := getTemplate()
 	return t.ExecuteTemplate(w, "toml", ctx)
 }
