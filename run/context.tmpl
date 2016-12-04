@@ -71,7 +71,7 @@ func files2paths(files []string) []string {
 
 // getTemplateFiles returns the files used by the n-th template
 func getTemplateFiles(n {{ .TemplateEnumType }}) []string {
-	const (
+	var (
 		// files paths
 		files = [...]string{ {{ astr2str .Files }}  }
 		// template-index to array of file-index
@@ -145,21 +145,21 @@ return template.Must(
 		template.ParseFiles(files2paths(files)...)
 		{{- end -}}
 	)
-}
 {{ end }}
+}
 {{ end }}
 
 
 {{ define "func-page-base" }}
 // Base returns the template name of the page
 func (page {{ .PageEnumType }}) Base() string {
-	const bases = [...]string{ {{astr2str .Bases }} }
+	var bases = [...]string{ {{astr2str .Bases }} }
 	{{ if eq (len .Bases) (len .PI2BI) }}
 		{{/* each page has a different base */}}
 	return bases[page]
 	{{ else }}
 		{{/* some pages have the same base -> remap neede */}}
-	const pi2bi = [...]{{ .PageEnumType }}{ {{aint2str .PI2BI}} }
+	var pi2bi = [...]{{ .PageEnumType }}{ {{aint2str .PI2BI}} }
 	return bases[pi2bi[page]]
 	{{ end }}
 }
