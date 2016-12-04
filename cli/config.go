@@ -1,4 +1,3 @@
-//go:generate stringer -type=AssetMngr
 package cli
 
 import (
@@ -14,15 +13,27 @@ import (
 
 const (
 	// name of the command line parameters
-	clConfig  = "c"
-	clOutput  = "o"
-	clPackage = "p"
-	clDebug   = "d"
+	clConfig    = "c"
+	clGenConfig = "g"
+	clOutput    = "o"
+	clPackage   = "p"
+	clDebug     = "d"
+	clHelp      = "h"
 
-	defaultConfigFile  = "templates.config.toml"
+	// default values
+	defaultConfigFile  = "config.toml"
 	defaultOutputFile  = "" // if empty use StdOut
-	defaultPackageName = "templates"
+	defaultPackageName = ""
 )
+
+type clArgs struct {
+	config    string
+	genConfig bool
+	output    string
+	pkg       string
+	debug     bool
+	help      bool
+}
 
 type config struct {
 	run.Context
@@ -54,30 +65,57 @@ func loadConfigFromFile(path string) (*config, error) {
 	return unmarshalConfig(buf)
 }
 
-// parseConfig returns the configuration from command line parameters,
-// config parameters and defaults
-func parseConfig() (*config, error) {
+func cmdHelp() {
+	fmt.Fprintln(os.Stderr, `Usage: gentmpl [OPTION]...
+Utility that generate a go package for load and render text/html templates.
+
+Options:
+`)
+	flag.PrintDefaults()
+	fmt.Fprintf(os.Stderr, `
+Examples:
+
+  Generate the templates package
+    genttmpl -c config.toml -o templates.go
+
+  Generate a demo configuration file
+    gentmpl -g -o config.toml
+`)
+}
+func parseArgs() *clArgs {
+	var args clArgs
+
 	// command line arguments
-	pConfigFile := flag.String(clConfig, defaultConfigFile, "Templates configuration file.")
-	pOutFile := flag.String(clOutput, defaultOutputFile, "Output file.")
-	pPkgName := flag.String(clPackage, defaultPackageName, "Package name to use in the generated code.")
-	pDebug := flag.Bool(clDebug, false, "Do not embed the assets, but provide the embedding API. Contents will still be loaded from disk.")
+	flag.StringVar(&args.config, clConfig, defaultConfigFile, "Configuration file used to generate the package.")
+	flag.StringVar(&args.output, clOutput, defaultOutputFile, "Optional output file for package/config file. If empty stdout will be used.")
+	flag.StringVar(&args.pkg, clPackage, defaultPackageName, "Package name to use in the generated code.")
+	flag.BoolVar(&args.debug, clDebug, false, "Debug mode. Do not cache templates and do not format generated code.")
+	flag.BoolVar(&args.help, clHelp, false, "Show command usage information.")
+	flag.BoolVar(&args.genConfig, clGenConfig, false, "Generate the configuration file instead of the package.")
+
 	flag.Parse()
 
+	return &args
+}
+
+// parseConfig returns the configuration from command line parameters,
+// config parameters and defaults
+func parseConfig(args *clArgs) (*config, error) {
+
 	// init config from the config file
-	cfg, err := loadConfigFromFile(*pConfigFile)
+	cfg, err := loadConfigFromFile(args.config)
 	if err != nil {
-		return nil, fmt.Errorf("LoadConfig: %s", err.Error())
+		return nil, err
 	}
 
 	// update config settings with command line parameters and set defaults
-	if *pOutFile != defaultOutputFile || cfg.OutputFile == "" {
-		cfg.OutputFile = *pOutFile
+	if args.output != defaultOutputFile || cfg.OutputFile == "" {
+		cfg.OutputFile = args.output
 	}
-	if *pPkgName != defaultPackageName || cfg.PackageName == "" {
-		cfg.PackageName = *pPkgName
+	if args.pkg != defaultPackageName || cfg.PackageName == "" {
+		cfg.PackageName = args.pkg
 	}
-	if *pDebug {
+	if args.debug {
 		cfg.NoGoFormat = true
 		cfg.NoCache = true
 	}
@@ -85,36 +123,83 @@ func parseConfig() (*config, error) {
 	return cfg, nil
 }
 
-func (cfg *config) WriteModule() error {
+func genOutput(output string, fn func(io.Writer) error) error {
 	var w io.Writer
-
-	ctx := cfg.Context
-
-	if cfg.OutputFile == "" {
+	if output == "" {
 		w = os.Stdout
 	} else {
-		// write buffer to output file
-		file, err := os.OpenFile(cfg.OutputFile, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
+		// create a new file
+		file, err := os.OpenFile(output, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
 		if err != nil {
 			return fmt.Errorf("Error writing output file: %s", err.Error())
 		}
-		defer file.Close()
 		w = file
+		defer file.Close()
 	}
+	return fn(w)
+}
 
-	return ctx.WriteModule(w)
+func genPackage(cfg *config) error {
+	ctx := cfg.Context
+	return genOutput(cfg.OutputFile, ctx.WritePackage)
+}
+
+func genConfig(output string) error {
+	const text = `
+[templates]
+flat = ["flat/footer.tmpl", "flat/header.tmpl", "flat/page1.tmpl", "flat/page2and3.tmpl"]
+inhbase = ["inheritance/base.tmpl"]
+inh1 = ["inhbase", "inheritance/content1.tmpl"]
+inh2 = ["inhbase", "inheritance/content2.tmpl"]
+
+[pages]
+Pag1 = {template="flat", base="page-1"}
+Pag2 = {template="flat", base="page-2"}
+Pag3 = {template="flat", base="page-3"}
+Inh1 = {template="inh1"}
+Inh2 = {template="inh2"}
+`
+	cfg, err := unmarshalConfig([]byte(text))
+	if err != nil {
+		return err
+	}
+	ctx := cfg.Context
+	return genOutput(output, ctx.WriteToml)
 }
 
 // run parse cmd line, read the config file and generate the package
 func Run() int {
+	const msghelp = "Try 'gentmpl -h' for more information."
 
-	cfg, err := parseConfig()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		return 1
+	args := parseArgs()
+
+	if args.help {
+		cmdHelp()
+		return 0
 	}
 
-	err = cfg.WriteModule()
+	if args.genConfig {
+		err := genConfig(args.output)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			return 2
+		}
+		return 0
+	}
+
+	// check config file exists
+	if _, err := os.Stat(args.config); os.IsNotExist(err) {
+		fmt.Fprintf(os.Stderr, "Configuration file %q not exists.\n%s\n", args.config, msghelp)
+		return 2
+	}
+
+	cfg, err := parseConfig(args)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		return 2
+	}
+
+	err = genPackage(cfg)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return 1

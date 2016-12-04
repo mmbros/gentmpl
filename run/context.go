@@ -14,8 +14,6 @@ import (
 const (
 	// path of the template file
 	templateFile = "context.tmpl"
-	// name of the template to generate the package
-	templateName = "module"
 
 	defaultPackageName      = "templates"
 	defaultPageEnumType     = "PageEnum"
@@ -42,7 +40,7 @@ type Context struct {
 
 	// Name of the template.FuncMap variable used in template creation.
 	// The variable must be defined in another file of the same package
-	// (es. "templates/func-map.go").
+	// (ex: "templates/func-map.go").
 	// If empty, no funcMap will be used.
 	FuncMap string
 
@@ -72,7 +70,7 @@ type Context struct {
 }
 
 // dataType contains all the information passed to the template used to
-// generate the module in WriteModule
+// generate the package in WritePackage
 type dataType struct {
 	ProgramName      string
 	Timestamp        time.Time
@@ -221,8 +219,23 @@ func (d *dataType) UseGoBindata() bool {
 	return d.assetMngr == AssetMngrGoBindata
 }
 
-// WriteModule prints the generated module to writer.
-func (ctx *Context) WriteModule(w io.Writer) error {
+// getTemplate init the template used to write the package
+func getTemplate() *template.Template {
+	// define the functions available in the template
+	templateFuncMap := template.FuncMap{
+		"uint":     uint,
+		"astr2str": astr2str,
+		"aint2str": aint2str,
+	}
+	// getTemplate create a new template and parse templateFile into it
+	t := template.New("").Funcs(templateFuncMap)
+	t.Parse(string(MustAsset(templateFile)))
+
+	return t
+}
+
+// WritePackage prints the generated package to writer.
+func (ctx *Context) WritePackage(w io.Writer) error {
 
 	var (
 		buf bytes.Buffer // A Buffer needs no initialization.
@@ -234,25 +247,10 @@ func (ctx *Context) WriteModule(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	// define the functions available in the template
-	templateFuncMap := template.FuncMap{
-		"uint":     uint,
-		"astr2str": astr2str,
-		"aint2str": aint2str,
-	}
-	/*
-		// create a new template and parse templateFile into it
-		t, err := template.New("").Funcs(templateFuncMap).ParseFiles(templateFile)
-		if err != nil {
-			return err
-		}
-	*/
-	// create a new template and parse templateFile into it
-	t := template.New("").Funcs(templateFuncMap)
-	t.Parse(string(MustAsset(templateFile)))
 
 	// execute the named template
-	err = t.ExecuteTemplate(&buf, templateName, data)
+	t := getTemplate()
+	err = t.ExecuteTemplate(&buf, "package", data)
 	if err != nil {
 		return err
 	}
@@ -270,5 +268,16 @@ func (ctx *Context) WriteModule(w io.Writer) error {
 	// write bytes to writer
 	_, err = w.Write(p)
 
+	return err
+}
+
+func (ctx *Context) WriteToml(w io.Writer) error {
+	t := getTemplate()
+	return t.ExecuteTemplate(w, "toml", ctx)
+}
+
+// Check check for errors in the Context's parameters.
+func (ctx *Context) Check() error {
+	_, err := ctx.checkAndPrepare()
 	return err
 }

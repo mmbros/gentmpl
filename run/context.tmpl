@@ -1,4 +1,4 @@
-{{ define "module" }}
+{{ define "package" }}
 {{- template "header" . }}
 {{ template "definitions" . }}
 {{ template "helpers" . }}
@@ -150,14 +150,6 @@ return template.Must(
 {{ end }}
 
 
-{{ define "func-page-base-old" }}
-// Base returns the template name of the page
-func (page {{ .PageEnumType }}) Base() string {
-{{ .InnerFuncPageBase }}
-}
-{{ end }}
-
-
 {{ define "func-page-base" }}
 // Base returns the template name of the page
 func (page {{ .PageEnumType }}) Base() string {
@@ -204,10 +196,108 @@ func main(){
 {{ end }}
 
 
+{{ define "toml" }}# gentmpl configuration file (TOML)
+
+# Package name to use in the generated code. (default "templates")
+{{ if .PackageName -}}
+package_name = "{{ .PackageName }}"
+{{- else -}}
+#package_name = ""
+{{- end }}
+
+# Do not cache the templates.
+# A new template will be created on every page.Execute.
+# Usefull for debug purposes.
+{{ if .NoCache -}}
+no_cache = true
+{{- else -}}
+#no_cache = false
+{{- end }}
+
+# Do not format the generated code with go/format.
+# Usefull for debug purposes.
+{{ if .NoGoFormat -}}
+no_go_format = true
+{{- else -}}
+#no_go_format = false
+{{- end }}
+
+# Asset manager to use. Possible values:
+# - none (default)
+# - go-bindata
+{{ if .AssetManager -}}
+asset_manager = "{{ .AssetManager }}"
+{{- else -}}
+#asset_manager = ""
+{{- end }}
+
+# PageEnumType type name used in the generated package. (default "PageEnum")
+{{ if .PageEnumType -}}
+page_enum_type = "{{ .PageEnumType }}"
+{{- else -}}
+#page_enum_type = ""
+{{- end }}
+
+# Strings used as prefix and suffix in the PageEnum constants.
+#   Defaults:
+#     page_enum_prefix = "Page"
+#     page_enum_suffix = ""
+#   Example:
+#     page "CreateUser", prefix="Page", suffix="" -> PageCreateUser
+{{ if .PageEnumPrefix -}}
+page_enum_prefix = "{{ .PageEnumPrefix }}"
+{{- else -}}
+#page_enum_prefix = "Page"
+{{- end }}
+{{ if .PageEnumSuffix -}}
+page_enum_suffix = "{{ .PageEnumSuffix }}"
+{{- else -}}
+#page_enum_suffix = ""
+{{- end }}
+
+# Name of the variable used as funcMap.
+# The variable must be defined in another file of the same package
+# (ex: "templates/func-map.go").
+# If not defined or blank, no funcMap will be used
+{{ if .FuncMap -}}
+func_map = ".FuncMap"
+{{- else -}}
+#func_map = ""
+{{- end }}
+
+# Base dir of the templates files
+template_base_dir = "{{ .TemplateBaseDir }}"
+
+# Templates used to render the Pages.
+# Each template must have name and an array of string item.
+# Each string item can be a:
+#   - path of a file to load in the template creation. The file path is
+#     relative to the template_base_dir folder.
+#   - name of another template to include in the current template.
+[templates]
+{{- range $name, $files := .Templates }}
+{{ $name }} = [{{ astr2str $files }}]
+{{- end }}
+
+# Pages to render.
+# Each page must have name, a template name and optionally a base name.
+# If defined, the base will be used in template.ExecuteTemplate as the name
+# of the template. Otherwise will be called template.Execute.
+[pages]
+{{- range $name, $page := .Pages }}
+{{ $name }} = {template="{{$page.Template}}"
+{{- if $page.Base }}, base="{{ $page.Base }}"{{ end -}}
+}
+{{- end }}
+
+{{ end }}
+
+
+
 {{ define "func-init" }}
 func init(){
 	// init base templates
-	for t := {{ .TemplateEnumType }}(0); t < templatesLen; t++ {
+	for t := {{ .TemplateEnumType }}(0); t<templatesLen; t++ {
 		files := getTemplateFiles(t)
 {{ if .UseGoBindata }}
 {{/*
@@ -235,4 +325,5 @@ func init(){
 	}
 }
 {{ end }}
+
 

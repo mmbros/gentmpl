@@ -41,7 +41,7 @@ func ErrorLike(err error, msg string) bool {
 	return strings.Contains(err.Error(), msg)
 }
 
-func TestPrepare(t *testing.T) {
+func TestCheck(t *testing.T) {
 	var (
 		ctx *Context
 		err error
@@ -58,7 +58,7 @@ func TestPrepare(t *testing.T) {
 
 	// test no pages
 	ctx = &Context{}
-	_, err = ctx.checkAndPrepare()
+	err = ctx.Check()
 	checkErr(err, "no pages", "No pages found")
 
 	// test page without a template
@@ -70,7 +70,7 @@ func TestPrepare(t *testing.T) {
 			"Pag": {},
 		},
 	}
-	_, err = ctx.checkAndPrepare()
+	err = ctx.Check()
 	checkErr(err, "page with no template", "Page must have a template")
 
 	// test template's page not found
@@ -79,7 +79,7 @@ func TestPrepare(t *testing.T) {
 		tmpl[key] = templates[key]
 	}
 	ctx = &Context{Pages: pages, Templates: tmpl}
-	_, err = ctx.checkAndPrepare()
+	err = ctx.Check()
 	checkErr(err, "no template", "Template not found for page")
 
 	// test cyclic templates
@@ -95,18 +95,25 @@ func TestPrepare(t *testing.T) {
 			"t2": {"p2", "t1"},
 		},
 	}
-	_, err = ctx.checkAndPrepare()
+	err = ctx.Check()
 	checkErr(err, "cyclic templates", "Found invalid cyclic template")
 
 }
 
-func TestWriteModule(t *testing.T) {
-
+func TestWritePackage(t *testing.T) {
 	ctx := &Context{Pages: pages, Templates: templates}
 	w := new(bytes.Buffer)
-	err := ctx.WriteModule(w)
+	err := ctx.WritePackage(w)
 	if err != nil {
 		t.Errorf(err.Error())
 	}
-	writefile("./DELETE_ME.go", w.String())
+}
+
+func TestWriteToml(t *testing.T) {
+	ctx := &Context{Pages: pages, Templates: templates}
+	w := new(bytes.Buffer)
+	err := ctx.WriteToml(w)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
 }
