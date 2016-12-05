@@ -53,6 +53,7 @@ import (
 
 
 {{ define "helpers" }}
+{{ if not .UseGoBindata -}}
 func files2paths(files []string) []string {
 	const templatesFolder = "{{ .TemplateBaseDir }}"
 	var path string
@@ -68,6 +69,7 @@ func files2paths(files []string) []string {
 	}
 	return paths
 }
+{{- end }}
 
 // getTemplateFiles returns the files used by the n-th template
 func getTemplateFiles(n {{ .TemplateEnumType }}) []string {
@@ -130,7 +132,11 @@ files := page.Files()
 */}}
 // use go-bindata MustAsset func to load templates
 tmpl := template.New(filepath.Base(files[0])){{ if .FuncMap }}.Funcs({{ .FuncMap }}){{ end }}
+{{ if .UseGoBindata }}
+for _, path := range files {
+{{ else }}
 for _, path := range files2paths(files) {
+{{ end }}
 	tmpl.Parse(string(MustAsset(path)))
 }
 return tmpl
@@ -305,7 +311,11 @@ func init(){
 */}}
 		// use go-bindata MustAsset func to load templates
 		tmpl := template.New(filepath.Base(files[0])){{ if .FuncMap }}.Funcs({{ .FuncMap }}){{ end }}
+		{{ if .UseGoBindata }}
+		for _, path := range files {
+		{{ else }}
 		for _, path := range files2paths(files) {
+		{{ end }}
 			tmpl.Parse(string(MustAsset(path)))
 		}
 		mTemplates[t] = tmpl
