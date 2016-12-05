@@ -2,8 +2,11 @@ package run
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -233,7 +236,39 @@ func main(){
 
 }
 
+func writeFuncmap(out string, ctx *Context) error {
+	const text = `package %s
+
+import "html/template"
+
+var %s = template.FuncMap{}
+`
+	return writeFile(out, fmt.Sprintf(text, ctx.PackageName, ctx.FuncMap))
+
+}
+
+func execMain(dir string) (string, error) {
+	var out []byte
+	var err error
+
+	//cmdline := fmt.Sprintf("go run %s", filepath.Join(dir, "*.go"))
+	cmdline := fmt.Sprintf("cd %s && go run *.go", dir)
+
+	cmd := exec.Command("sh", "-c", cmdline)
+	out, err = cmd.CombinedOutput()
+	sout := string(out)
+
+	if err != nil {
+		return "", errors.New(sout)
+	}
+
+	return sout, nil
+}
+
 func TestAll(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping TestAll in short mode")
+	}
 
 	// setup
 	tmpdir := setupDirTemplates()
@@ -269,6 +304,15 @@ func TestAll(t *testing.T) {
 				}
 
 				// bindata.go
+				if ctx.FuncMap != "" {
+					out = filepath.Join(tmpdir, folder, "funcmap.go")
+					err = writeFuncmap(out, ctx)
+					if err != nil {
+						t.Errorf("%s/funcmap %s", folder, err.Error())
+					}
+				}
+
+				// bindata.go
 				if assetmngr != "" {
 					out = filepath.Join(tmpdir, folder, "bindata.go")
 					err = writeBindata(out, ctx)
@@ -276,13 +320,18 @@ func TestAll(t *testing.T) {
 						t.Errorf("%s/bindata %s", folder, err.Error())
 					}
 				}
-
 				// main.go
 				out = filepath.Join(tmpdir, folder, "main.go")
 				err = writeMain(out, ctx)
 				if err != nil {
 					t.Errorf("%s/main %s", folder, err.Error())
 				}
+
+				// exec main
+				if _, err := execMain(filepath.Join(tmpdir, folder)); err != nil {
+					t.Errorf("%s/exec %s", folder, err.Error())
+				}
+
 			}
 		}
 	}
