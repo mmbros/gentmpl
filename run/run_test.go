@@ -15,6 +15,15 @@ import (
 )
 
 const (
+	// Delete tmp folder mode values
+	deleteDirNever = iota
+	deleteDirSuccess
+	deleteDirAlways
+)
+const (
+	// When to delete the tmp dir created in TestRun
+	deleteDirMode = deleteDirNever
+
 	// tmp folder prefix
 	testDirPrefix = "gentmpl_"
 
@@ -254,11 +263,12 @@ func TestRun(t *testing.T) {
 
 	// clean up
 	defer func() {
-		if t.Failed() {
-			t.Logf("TestRun failed: don't delete TempDir %q", root)
-		} else {
+		if (deleteDirMode == deleteDirAlways) ||
+			(deleteDirMode == deleteDirSuccess && !t.Failed()) {
 			os.RemoveAll(root)
 			t.Logf("TestRun: deleted TempDir %q", root)
+		} else {
+			t.Logf("TestRun: don't delete TempDir %q", root)
 		}
 	}()
 
