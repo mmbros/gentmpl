@@ -24,7 +24,11 @@
 package {{ .PackageName }}
 
 import (
+{{ if .TextTemplate -}}
+	"text/template"
+{{- else -}}
 	"html/template"
+{{- end }}
 	"io"
 	"path/filepath"
 )
@@ -235,6 +239,13 @@ no_go_format = true
 asset_manager = "{{ .AssetManager }}"
 {{- else -}}
 #asset_manager = ""
+{{- end }}
+
+# Use text/template instead of html/template.
+{{ if .TextTemplate -}}
+text_template = true
+{{- else -}}
+#text_template = false
 {{- end }}
 
 # PageEnumType type name used in the generated package. (default "PageEnum")

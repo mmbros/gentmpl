@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"go/format"
 	"io"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -38,14 +39,14 @@ type Context struct {
 	// - go-bindata
 	AssetManager string
 
+	// Use text/template instead of html/template.
+	TextTemplate bool
+
 	// Name of the template.FuncMap variable used in template creation.
 	// The variable must be defined in another file of the same package
 	// (ex: "templates/func-map.go").
 	// If empty, no funcMap will be used.
 	FuncMap string
-
-	// Name of the TemplateEnum type definition
-	TemplateEnumType string
 
 	// Name of the PageEnum type definition
 	PageEnumType string
@@ -54,6 +55,9 @@ type Context struct {
 	// Example:  page "CreateUser", prefix="Page", suffix="" -> PageCreateUser
 	PageEnumPrefix string
 	PageEnumSuffix string
+
+	// Name of the TemplateEnum type definition
+	TemplateEnumType string
 
 	// Base folder of the templates files
 	TemplateBaseDir string
@@ -82,6 +86,7 @@ type dataType struct {
 	TemplateBaseDir  string
 	TemplateEnumType string
 	PageEnumType     string
+	TextTemplate     bool
 
 	Pages     []string // page names (sorted)
 	Bases     []string // base names
@@ -101,6 +106,10 @@ func nvl(a, b string) string {
 		return b
 	}
 	return a
+}
+
+func (ctx *Context) UseGoBindata() bool {
+	return strings.ToLower(ctx.AssetManager) == "go-bindata"
 }
 
 // checkAndPrepare check for errors in the Context's parameters.
@@ -193,6 +202,7 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 		PageEnumType:     nvl(ctx.PageEnumType, defaultPageEnumType),
 		FuncMap:          ctx.FuncMap,
 		TemplateBaseDir:  ctx.TemplateBaseDir,
+		TextTemplate:     ctx.TextTemplate,
 
 		Pages:     pages.ToSlice(),
 		Templates: templates.ToSlice(),
@@ -215,6 +225,7 @@ func (d *dataType) PageName(name string) string {
 	return d.pageEnumPrefix + name + d.pageEnumSuffix
 }
 
+// UseGoBindata returns if the asset manager is Go-Bindata
 func (d *dataType) UseGoBindata() bool {
 	return d.assetMngr == AssetMngrGoBindata
 }
@@ -271,6 +282,7 @@ func (ctx *Context) WritePackage(w io.Writer) error {
 	return err
 }
 
+// WriteConfig prints the configuration that recreate the current context
 func (ctx *Context) WriteConfig(w io.Writer) error {
 	t := getTemplate()
 	return t.ExecuteTemplate(w, "toml", ctx)
