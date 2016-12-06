@@ -71,8 +71,8 @@ func files2paths(files []string) []string {
 }
 {{- end }}
 
-// getTemplateFiles returns the files used by the n-th template
-func getTemplateFiles(n {{ .TemplateEnumType }}) []string {
+// Files returns the files used by the `t` template
+func (t {{ .TemplateEnumType }}) Files() []string {
 	var (
 		// files paths
 		files = [...]string{ {{ astr2str .Files }}  }
@@ -84,7 +84,7 @@ func getTemplateFiles(n {{ .TemplateEnumType }}) []string {
 		}
 	)
 	// get the template files indexes
-	idxs := ti2afi[n]
+	idxs := ti2afi[t]
 	// build the array of files
 	astr := make([]string, len(idxs))
 	for j, idx := range idxs {
@@ -106,7 +106,7 @@ func (page {{ .PageEnumType }}) Files() []string {
 	}
 	// get the template of the page
 	t := p2t[page]
-	return getTemplateFiles(t)
+	return t.Files()
 }
 {{ end }}
 
@@ -304,11 +304,11 @@ template_base_dir = "{{ .TemplateBaseDir }}"
 func init(){
 	// init base templates
 	for t := {{ .TemplateEnumType }}(0); t<templatesLen; t++ {
-		files := getTemplateFiles(t)
-{{ if .UseGoBindata }}
-{{/*
+		files := t.Files()
+{{- if .UseGoBindata -}}
+{{/*-
 	asset_manager == go-bindata
-*/}}
+-*/}}
 		// use go-bindata MustAsset func to load templates
 		tmpl := template.New(filepath.Base(files[0])){{ if .FuncMap }}.Funcs({{ .FuncMap }}){{ end }}
 		{{ if .UseGoBindata }}
@@ -319,11 +319,10 @@ func init(){
 			tmpl.Parse(string(MustAsset(path)))
 		}
 		mTemplates[t] = tmpl
-{{ else }}
-{{/*
+{{- else -}}
+{{/*-
 	asset_manager == none
-*/}}
-
+-*/}}
 		mTemplates[t] = template.Must(
 			{{- if .FuncMap -}}
 			template.New(filepath.Base(files[0])).Funcs({{ .FuncMap }}).ParseFiles(files2paths(files)...)
@@ -331,7 +330,7 @@ func init(){
 			template.ParseFiles(files2paths(files)...)
 			{{- end -}}
 		)
-{{ end }}
+{{- end }}
 	}
 }
 {{ end }}
