@@ -1,4 +1,6 @@
 //go:generate go-bindata -pkg run -nometadata context.tmpl
+
+// Package run provide the logic for generating code for the gentmpl tool.
 package run
 
 import (
@@ -7,7 +9,6 @@ import (
 	"fmt"
 	"go/format"
 	"io"
-	"strings"
 	"text/template"
 	"time"
 )
@@ -22,22 +23,25 @@ const (
 	defaultTemplateEnumType = "templateEnum"
 )
 
-// Context is ...
+// Context contains the parameters that manage the code generation.
+//
+// The default values of the struct are so that no NewContext() func is needed
+// to initialize the struct.
 type Context struct {
 	// Do not cache the templates.
-	// A new template will be created on every page.ExecuteTemplate.
+	// A new template will be created on every page.Execute.
 	NoCache bool
 
 	// Do not format the generated code with go/format.
 	NoGoFormat bool
 
-	// Package name to use in the generated code.
+	// Package name used in the generated code.
 	PackageName string
 
 	// Asset manager to use. Possible values:
 	// - none (default)
 	// - go-bindata
-	AssetManager string
+	AssetManager AssetManagerEnum
 
 	// Use text/template instead of html/template.
 	TextTemplate bool
@@ -80,8 +84,8 @@ type dataType struct {
 	Timestamp        time.Time
 	NoCache          bool
 	NoGoFormat       bool
-	AssetManager     string
 	PackageName      string
+	AssetManager     AssetManagerEnum
 	FuncMap          string
 	TemplateBaseDir  string
 	TemplateEnumType string
@@ -96,7 +100,6 @@ type dataType struct {
 	PI2TI     []int    // page-index to template-index
 	TI2AFI    [][]int  // template-index to array of file-index
 
-	assetMngr      AssetMngr
 	pageEnumPrefix string
 	pageEnumSuffix string
 }
@@ -108,22 +111,17 @@ func nvl(a, b string) string {
 	return a
 }
 
-func (ctx *Context) UseGoBindata() bool {
-	return strings.ToLower(ctx.AssetManager) == "go-bindata"
-}
-
 // checkAndPrepare check for errors in the Context's parameters.
 // If no error is found, returns the dataTaype object created based on the Context
 func (ctx *Context) checkAndPrepare() (*dataType, error) {
-	var (
-		err       error
-		assetMngr AssetMngr
-	)
+	var err error
 
 	// asset manager
-	assetMngr, err = parseAssetMngr(ctx.AssetManager)
-	if err != nil {
-		return nil, err
+	switch ctx.AssetManager {
+	case AssetManagerNone, AssetManagerGoBindata:
+		// ok
+	default:
+		return nil, fmt.Errorf("AssetManager not supported: %q", ctx.AssetManager)
 	}
 
 	// pages
@@ -212,7 +210,6 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 		PI2BI:     pi2bi,
 		TI2AFI:    ti2afi,
 
-		assetMngr:      assetMngr,
 		pageEnumPrefix: nvl(ctx.PageEnumPrefix, defaultPagePrefix),
 		pageEnumSuffix: ctx.PageEnumSuffix,
 	}
@@ -223,11 +220,6 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 // PageName returns the PageEnum constant of the page with given name.
 func (d *dataType) PageName(name string) string {
 	return d.pageEnumPrefix + name + d.pageEnumSuffix
-}
-
-// UseGoBindata returns if the asset manager is Go-Bindata
-func (d *dataType) UseGoBindata() bool {
-	return d.assetMngr == AssetMngrGoBindata
 }
 
 // getTemplate init the template used to write the package
@@ -282,7 +274,8 @@ func (ctx *Context) WritePackage(w io.Writer) error {
 	return err
 }
 
-// WriteConfig prints the configuration that recreate the current context
+// WriteConfig prints the current Context to writer using a TOML file format.
+// The file has comments describing each parameter of the configuration.
 func (ctx *Context) WriteConfig(w io.Writer) error {
 	t := getTemplate()
 	return t.ExecuteTemplate(w, "toml", ctx)

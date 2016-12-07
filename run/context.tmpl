@@ -57,7 +57,7 @@ import (
 
 
 {{ define "helpers" }}
-{{ if not .UseGoBindata -}}
+{{ if .AssetManager.IsNone -}}
 func files2paths(files []string) []string {
 	const templatesFolder = "{{ .TemplateBaseDir }}"
 	var path string
@@ -130,17 +130,13 @@ func (page {{ .PageEnumType }}) Template() *template.Template {
 // Template returns the template.Template of the page
 func (page {{ .PageEnumType }}) Template() *template.Template {
 files := page.Files()
-{{ if .UseGoBindata }}
+{{ if .AssetManager.IsGoBindata }}
 {{/*
 	asset_manager == go-bindata
 */}}
 // use go-bindata MustAsset func to load templates
 tmpl := template.New(filepath.Base(files[0])){{ if .FuncMap }}.Funcs({{ .FuncMap }}){{ end }}
-{{ if .UseGoBindata }}
 for _, path := range files {
-{{ else }}
-for _, path := range files2paths(files) {
-{{ end }}
 	tmpl.Parse(string(MustAsset(path)))
 }
 return tmpl
@@ -235,7 +231,7 @@ no_go_format = true
 # Asset manager to use. Possible values:
 # - none (default)
 # - go-bindata
-{{ if .AssetManager -}}
+{{ if not .AssetManager.IsNone -}}
 asset_manager = "{{ .AssetManager }}"
 {{- else -}}
 #asset_manager = ""
@@ -316,17 +312,13 @@ func init(){
 	// init base templates
 	for t := {{ .TemplateEnumType }}(0); t<templatesLen; t++ {
 		files := t.Files()
-{{- if .UseGoBindata -}}
+{{- if .AssetManager.IsGoBindata -}}
 {{/*-
 	asset_manager == go-bindata
 -*/}}
 		// use go-bindata MustAsset func to load templates
 		tmpl := template.New(filepath.Base(files[0])){{ if .FuncMap }}.Funcs({{ .FuncMap }}){{ end }}
-		{{ if .UseGoBindata }}
 		for _, path := range files {
-		{{ else }}
-		for _, path := range files2paths(files) {
-		{{ end }}
 			tmpl.Parse(string(MustAsset(path)))
 		}
 		mTemplates[t] = tmpl

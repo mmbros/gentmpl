@@ -145,7 +145,11 @@ func TestCheck(t *testing.T) {
 
 func TestWritePackage(t *testing.T) {
 
-	ctx := &Context{Pages: pages, Templates: templates, TextTemplate: true, AssetManager: "go-bindata"}
+	ctx := &Context{
+		Pages:        pages,
+		Templates:    templates,
+		TextTemplate: true,
+		AssetManager: AssetManagerGoBindata}
 	buf := new(bytes.Buffer)
 	err := ctx.WritePackage(buf)
 	if err != nil {
@@ -162,7 +166,7 @@ func TestWritePackage(t *testing.T) {
 		t.Errorf("Expected %s not found", find)
 	}
 
-	if ctx.UseGoBindata() {
+	if ctx.AssetManager.IsGoBindata() {
 		find = "MustAsset"
 	} else {
 		find = "files2paths"
@@ -201,7 +205,7 @@ func setupDirTemplates() string {
 }
 
 // ctx2str returns a short string that represents the context.
-//   - as -> AssetManager : 0=none,  1=GoBindata
+//   - am -> AssetManager : 0=none,  1=GoBindata
 //   - nc -> NoCache      : 0=false, 1=true
 //   - fm -> FuncMap      : 0=false, 1=true
 //   - nf -> NoGoFormat   : 0=false, 1=true
@@ -216,8 +220,8 @@ func ctx2str(ctx *Context) string {
 	}
 	writeSep := func() { b.WriteRune('-') }
 
-	b.WriteString("as")
-	writeBool(strings.ToLower(ctx.AssetManager) == "go-bindata")
+	b.WriteString("am")
+	b.WriteString(fmt.Sprintf("%d", ctx.AssetManager))
 
 	writeSep()
 	b.WriteString("nc")
@@ -252,7 +256,7 @@ func writeTemplates(ctx *Context, dir string) error {
 
 // writeBindata create a go-bindata file based on the Context
 func writeBindata(ctx *Context, dir string) error {
-	if ctx.AssetManager == "" {
+	if !ctx.AssetManager.IsGoBindata() {
 		return nil
 	}
 	path := filepath.Join(dir, "bindata.go")
@@ -393,7 +397,7 @@ func TestRun(t *testing.T) {
 	for _, nocache := range []bool{false, true} {
 		ctx.NoCache = nocache
 
-		for _, assetmngr := range []string{"", "go-bindata"} {
+		for _, assetmngr := range []AssetManagerEnum{AssetManagerNone, AssetManagerGoBindata} {
 			ctx.AssetManager = assetmngr
 
 			for _, funcmap := range []string{"", "funcMap"} {
