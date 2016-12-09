@@ -1,4 +1,8 @@
-//go:generate go-bindata -pkg run -nometadata context.tmpl
+// === create context.tmpl.go to embed context.tmpl
+//go:generate go run genasset.go -i context.tmpl -p run -f getAsset
+//
+// === create bindata.go to embed context.tmpl
+//#go:generate go-bindata -pkg run -nometadata context.tmpl
 
 // Package run provide the logic for generating code for the gentmpl tool.
 package run
@@ -232,7 +236,8 @@ func getTemplate() *template.Template {
 	}
 	// getTemplate create a new template and parse templateFile into it
 	t := template.New("").Funcs(templateFuncMap)
-	t.Parse(string(MustAsset(templateFile)))
+	//t.Parse(string(MustAsset(templateFile)))
+	t.Parse(getAsset())
 
 	return t
 }
