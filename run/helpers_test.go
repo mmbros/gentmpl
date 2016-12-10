@@ -1,6 +1,9 @@
 package run
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func checkEqual(a, b []string) bool {
 
@@ -23,6 +26,23 @@ func checkEqual(a, b []string) bool {
 	}
 
 	return true
+}
+
+func ExampleresolveIncludes() {
+	var (
+		mapping = map[string][]string{
+			"inc": {"header", "footer"},
+			"A":   {"contentA", "inc"},
+			"B":   {"contentB", "inc"},
+		}
+		names = []string{"A", "B"}
+	)
+	res, _ := resolveIncludes(mapping, names)
+	fmt.Println(res["A"])
+	fmt.Println(res["B"])
+	// Output:
+	// [contentA header footer]
+	// [contentB header footer]
 }
 
 func TestResolveIncludes(t *testing.T) {
@@ -65,25 +85,6 @@ func TestResolveIncludesLoop(t *testing.T) {
 	}
 
 }
-
-/*
-func oldTestResolveIncludesPanic(t *testing.T) {
-	// http://stackoverflow.com/questions/31595791/how-to-test-panics
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("resolveIncludes with loop: the code did not panic")
-		}
-	}()
-	var templates = map[string][]string{
-		"incA": {"A1", "incB"},
-		"incB": {"incA", "B1"},
-	}
-	var astr = []string{"incA"}
-
-	_, _ = resolveIncludes(templates, astr)
-
-}
-*/
 
 func TestUsize(t *testing.T) {
 	var cases = []struct {

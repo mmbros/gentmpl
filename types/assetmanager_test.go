@@ -1,4 +1,4 @@
-package run
+package types
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 func TestString(t *testing.T) {
 
 	var testCases = []struct {
-		assetMngr AssetManagerEnum
+		assetMngr AssetManager
 		expected  string
 	}{
 
@@ -33,7 +33,7 @@ func TestParse(t *testing.T) {
 
 	var testCases = []struct {
 		input    string
-		expected AssetManagerEnum
+		expected AssetManager
 		ok       bool
 	}{
 		{"", AssetManagerNone, true},
@@ -66,7 +66,7 @@ func TestParse(t *testing.T) {
 func TestUnmarshal(t *testing.T) {
 	var testCases = []struct {
 		input    string
-		expected AssetManagerEnum
+		expected AssetManager
 		ok       bool
 	}{
 		{"NO_DECL", AssetManagerNone, true},
@@ -81,7 +81,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 
 	type config struct {
-		AssetManager AssetManagerEnum
+		AssetManager AssetManager
 	}
 	var cfg config
 	var text string
@@ -91,7 +91,6 @@ func TestUnmarshal(t *testing.T) {
 		if i > 0 {
 			text = fmt.Sprintf("asset_manager = %q", tc.input)
 		}
-		t.Logf(text)
 
 		err := toml.Unmarshal([]byte(text), &cfg)
 		if tc.ok {
@@ -107,5 +106,45 @@ func TestUnmarshal(t *testing.T) {
 			}
 		}
 	}
+}
 
+func TestMarshal(t *testing.T) {
+	var testCases = []struct {
+		input    AssetManager
+		expected string
+		ok       bool
+	}{
+		{AssetManagerNone, "none", true},
+		{AssetManagerGoBindata, "go-bindata", true},
+		{AssetManagerGoRice, "go.rice", true},
+		{AssetManager(100), "", false},
+		{AssetManagerNone, "none", true},
+	}
+
+	type config struct {
+		AssetManager AssetManager
+	}
+	var cfg config
+
+	for _, tc := range testCases {
+		cfg.AssetManager = tc.input
+
+		b, err := toml.Marshal(cfg)
+		if tc.ok {
+			if err != nil {
+				t.Errorf("Marshal(%s) unexpected error: %s", tc.input.String(), err.Error())
+				continue
+			}
+			actual := string(b)
+			expect := fmt.Sprintf("asset_manager=%q\n", tc.expected)
+			if actual != expect {
+				t.Errorf("Marshal(%s): expected %q, got %q", tc.input.String(), expect, actual)
+			}
+		} else {
+			if err == nil {
+				t.Errorf("Marshal(%s) expected error not raised", tc.input.String())
+			}
+
+		}
+	}
 }

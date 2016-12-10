@@ -6,33 +6,38 @@ import (
 	"strconv"
 )
 
-func resolveIncludes(templates map[string][]string, astr []string) (map[string][]string, error) {
+// resolveIncludes returns a modified version of the input mapping.
+// It filter the elements taking only the keys found in the names array.
+// Moreover every item that corrispond to a mapping key name is (recursivery)
+// expanded with the mapping items.
+// It returs an error in case of cyclic includes.
+func resolveIncludes(mapping map[string][]string, names []string) (map[string][]string, error) {
 	type set map[string]struct{}
 
 	m := make(map[string][]string)
 
 	var resolve func(string, set) error
 
-	resolve = func(templateName string, visited set) error {
+	resolve = func(name string, visited set) error {
 
-		if _, ok := m[templateName]; ok {
+		if _, ok := m[name]; ok {
 			// already resolved
 			return nil
 		}
 
-		if _, ok := visited[templateName]; ok {
-			return fmt.Errorf("Found invalid cyclic template (%s)", templateName)
+		if _, ok := visited[name]; ok {
+			return fmt.Errorf("Found invalid cycle (%s)", name)
 		}
 
 		// add name to the set of already included templates
-		visited[templateName] = struct{}{}
+		visited[name] = struct{}{}
 
 		// iter over each template files
 		var files []string
 
-		for _, item := range templates[templateName] {
+		for _, item := range mapping[name] {
 			// check if it's an include item
-			if _, ok := templates[item]; ok {
+			if _, ok := mapping[item]; ok {
 				// it's an include
 				if err := resolve(item, visited); err != nil {
 					return err
@@ -45,70 +50,20 @@ func resolveIncludes(templates map[string][]string, astr []string) (map[string][
 
 		}
 
-		m[templateName] = files
+		m[name] = files
 		return nil
 	}
 
 	res := make(map[string][]string)
 
-	for _, tmplName := range astr {
-		if err := resolve(tmplName, set{}); err != nil {
+	for _, name := range names {
+		if err := resolve(name, set{}); err != nil {
 			return nil, err
 		}
-		res[tmplName] = m[tmplName]
+		res[name] = m[name]
 	}
 
 	return res, nil
-}
-
-func old_resolveIncludes(templates map[string][]string, astr []string) map[string][]string {
-	type set map[string]struct{}
-
-	m := make(map[string][]string)
-
-	var resolve func(string, set)
-
-	resolve = func(templateName string, visited set) {
-
-		if _, ok := m[templateName]; ok {
-			// already resolved
-			return
-		}
-
-		if _, ok := visited[templateName]; ok {
-			panic(fmt.Errorf("found invalid cyclic template (%s)", templateName))
-		}
-
-		// add name to the set of already included templates
-		visited[templateName] = struct{}{}
-
-		// iter over each template files
-		var files []string
-
-		for _, item := range templates[templateName] {
-			// check if it's an include item
-			if _, ok := templates[item]; ok {
-				// it's an include
-				resolve(item, visited)
-				files = append(files, m[item]...)
-			} else {
-				// append the file
-				files = append(files, item)
-			}
-
-		}
-
-		m[templateName] = files
-	}
-
-	res := make(map[string][]string)
-
-	for _, tmplName := range astr {
-		resolve(tmplName, set{})
-		res[tmplName] = m[tmplName]
-	}
-
-	return res
 }
 
 // usize returns the number of bits of the smallest unsigned integer

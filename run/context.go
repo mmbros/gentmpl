@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/mmbros/gentmpl/collection"
+	"github.com/mmbros/types"
 )
 
 const (
@@ -47,7 +48,7 @@ type Context struct {
 	// Asset manager to use. Possible values:
 	// - none (default)
 	// - go-bindata
-	AssetManager AssetManagerEnum
+	AssetManager types.AssetManager
 
 	// Use text/template instead of html/template.
 	TextTemplate bool
@@ -58,25 +59,28 @@ type Context struct {
 	// If empty, no funcMap will be used.
 	FuncMap string
 
-	// Name of the PageEnum type definition
+	// Name of the PageEnum type definition.
 	PageEnumType string
 
-	// Strings used as prefix and suffix in the PageEnum constants
+	// Strings used as prefix and suffix in the PageEnum constants.
 	// Example:  page "CreateUser", prefix="Page", suffix="" -> PageCreateUser
 	PageEnumPrefix string
 	PageEnumSuffix string
 
-	// Name of the TemplateEnum type definition
+	// Name of the TemplateEnum type definition.
 	TemplateEnumType string
 
-	// Base folder of the templates files
+	// Base folder of the templates files.
 	TemplateBaseDir string
 
-	// Mapping from template name to files included in the template.
-	// The files path is relative to the TemplateBaseDir path.
+	// Mapping from template name to items used to create the template.
+	// Each item can be a:
+	// - file path to parse in the template creation.
+	// - name of another template to include in the current template.
 	Templates map[string][]string
 
-	// Mapping from page name to template name and base values used to render the page
+	// Mapping from page name to template name and base values used to render
+	// the page.
 	Pages map[string]struct {
 		Template string
 		Base     string
@@ -84,14 +88,14 @@ type Context struct {
 }
 
 // dataType contains all the information passed to the template used to
-// generate the package in WritePackage
+// generate the package in WritePackage.
 type dataType struct {
 	ProgramName      string
 	Timestamp        time.Time
 	NoCache          bool
 	NoGoFormat       bool
 	PackageName      string
-	AssetManager     AssetManagerEnum
+	AssetManager     types.AssetManager
 	FuncMap          string
 	TemplateBaseDir  string
 	TemplateEnumType string
@@ -124,7 +128,7 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 
 	// asset manager
 	switch ctx.AssetManager {
-	case AssetManagerNone, AssetManagerGoBindata:
+	case types.AssetManagerNone, types.AssetManagerGoBindata:
 		// ok
 	default:
 		return nil, fmt.Errorf("AssetManager not supported: %q", ctx.AssetManager)
@@ -240,7 +244,11 @@ func getTemplate() *template.Template {
 	// getTemplate create a new template and parse templateFile into it
 	t := template.New("").Funcs(templateFuncMap)
 	//t.Parse(string(MustAsset(templateFile)))
-	t.Parse(getAsset())
+	var err error
+	t, err = t.Parse(getAsset())
+	if err != nil {
+		panic(err)
+	}
 
 	return t
 }

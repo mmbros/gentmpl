@@ -12,12 +12,17 @@ import (
 	"testing"
 
 	"github.com/jteeuwen/go-bindata"
+	"github.com/mmbros/types"
 )
 
+// Delete tmp folder mode values
 const (
-	// Delete tmp folder mode values
+	// Never delete tmp folder
 	deleteDirNever = iota
+	// Delete tmp folder in case of success.
+	// If test fails, the tmp folder is not removed
 	deleteDirSuccess
+	// Always delete tmp folder
 	deleteDirAlways
 )
 const (
@@ -139,7 +144,7 @@ func TestCheck(t *testing.T) {
 		},
 	}
 	err = ctx.Check()
-	checkErr(err, "cyclic templates", "Found invalid cyclic template")
+	checkErr(err, "cyclic templates", "Found invalid cycle")
 
 }
 
@@ -149,7 +154,7 @@ func TestWritePackage(t *testing.T) {
 		Pages:        pages,
 		Templates:    templates,
 		TextTemplate: true,
-		AssetManager: AssetManagerGoBindata}
+		AssetManager: types.AssetManagerGoBindata}
 	buf := new(bytes.Buffer)
 	err := ctx.WritePackage(buf)
 	if err != nil {
@@ -397,7 +402,9 @@ func TestRun(t *testing.T) {
 	for _, nocache := range []bool{false, true} {
 		ctx.NoCache = nocache
 
-		for _, assetmngr := range []AssetManagerEnum{AssetManagerNone, AssetManagerGoBindata} {
+		for _, assetmngr := range []types.AssetManager{
+			types.AssetManagerNone,
+			types.AssetManagerGoBindata} {
 			ctx.AssetManager = assetmngr
 
 			for _, funcmap := range []string{"", "funcMap"} {
