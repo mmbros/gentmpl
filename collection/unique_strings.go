@@ -1,3 +1,4 @@
+// Package collection implements collection types as UniqueStrings
 package collection
 
 import "sort"

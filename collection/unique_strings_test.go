@@ -76,6 +76,7 @@ func TestUniqueStrings_ErriIndexOutOfRange(t *testing.T) {
 			showerr("no error")
 		} else {
 			e, ok := r.(error)
+			// TODO: find a better to check "index out of range" error
 			if ok {
 				if e.Error() != msg {
 					showerr(e.Error())
