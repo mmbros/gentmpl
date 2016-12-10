@@ -15,6 +15,8 @@ import (
 	"io"
 	"text/template"
 	"time"
+
+	"github.com/mmbros/gentmpl/collection"
 )
 
 const (
@@ -132,14 +134,14 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 	if len(ctx.Pages) == 0 {
 		return nil, errors.New("No pages found")
 	}
-	pages := NewOrderedSetString()
+	pages := collection.NewUniqueStrings()
 	for pageName := range ctx.Pages {
 		pages.Add(pageName)
 	}
 	pages.Sort()
 
 	// templates used by the pages
-	templates := NewOrderedSetString()
+	templates := collection.NewUniqueStrings()
 	for _, pageName := range pages.ToSlice() {
 		templateName := ctx.Pages[pageName].Template
 		if templateName == "" {
@@ -170,7 +172,8 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 	}
 
 	// bases
-	bases := NewOrderedSetString()
+	bases := collection.NewUniqueStrings()
+
 	// mapping from page-index to base-index
 	pi2bi := make([]int, pages.Len())
 
@@ -180,7 +183,7 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 	}
 
 	// files
-	files := NewOrderedSetString()
+	files := collection.NewUniqueStrings()
 	// mapping from template-index to array of file-index
 	ti2afi := make([][]int, templates.Len())
 
