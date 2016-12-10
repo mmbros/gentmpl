@@ -38,11 +38,14 @@ import (
 {{ define "definitions" }}
 	// type definitions
 	type (
+		// {{ .TemplateEnumType }} is the type of the Templates
 		{{ .TemplateEnumType }} {{ uint (len .Templates) }}
+		// {{ .PageEnumType }} is the type of the Pages
 		{{ .PageEnumType }} {{ uint (len .Pages) }}
 	)
-	// {{ .PageEnumType }} constants
+	// number of templates
 	const templatesLen = {{ len .Templates }}
+	// {{ .PageEnumType }} constants
 	const (
 		{{ range $idx, $elem := .Pages -}}
 			{{ $.PageName $elem }}{{ if eq $idx 0 }} {{ $.PageEnumType }} = iota{{ end }}
@@ -191,7 +194,7 @@ func (page {{ .PageEnumType }}) Execute(wr io.Writer, data interface{}) error {
 {{ define "func-main" }}
 /*
 func main(){
-	var page {{.PageEnumType}} = {{ .PageName (index .Pages 0) }}
+	var page = {{ .PageName (index .Pages 0) }}
 	wr := os.Stdout
 
 	if err := page.Execute(wr, nil); err != nil {
