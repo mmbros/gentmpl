@@ -1,3 +1,4 @@
+// Package cli provides a CLI UI for the gentmpl command line tool.
 package cli
 
 import (
@@ -64,7 +65,19 @@ func loadConfigFromFile(path string) (*config, error) {
 
 func cmdHelp() {
 	fmt.Fprintln(os.Stderr, `Usage: gentmpl [OPTION]...
-Utility that generate a go package for load and render text/html templates.
+
+gentmpl is an utility that generates a go package for parse and render html or
+text templates.
+
+gentmpl reads a configuration file with two mandatory sections:
+  - templates: defines the templates used to render the pages
+  - pages: defines the template and base names to render each page
+
+gentmpl generates a package that automatically handle the creation of the
+templates, loading and parsing the files specified in the configuration.
+Moreover for each page of name Name gentmpl defines a constant PageName so that
+to render the page all you have to do is:
+  err := PageName.Execute(w, data)
 
 Options:
 `)
@@ -116,13 +129,16 @@ func parseConfig(args *clArgs) (*config, error) {
 	return cfg, nil
 }
 
-func genOutput(output string, fn func(io.Writer) error) error {
+// writeOutput apply the fn func to the io.Writer defined by path. If path is
+// empty the Stdout will be used; else a new file with the give path will be
+// used.
+func writeOutput(path string, fn func(io.Writer) error) error {
 	var w io.Writer
-	if output == "" {
+	if path == "" {
 		w = os.Stdout
 	} else {
 		// create a new file
-		file, err := os.OpenFile(output, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
+		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
 		if err != nil {
 			return fmt.Errorf("Error writing output file: %s", err.Error())
 		}
@@ -132,12 +148,15 @@ func genOutput(output string, fn func(io.Writer) error) error {
 	return fn(w)
 }
 
-func genPackage(cfg *config) error {
+// cmdGenPackage generate the package based on the provided configuration
+// parameters.
+func cmdGenPackage(cfg *config) error {
 	ctx := cfg.Context
-	return genOutput(cfg.OutputFile, ctx.WritePackage)
+	return writeOutput(cfg.OutputFile, ctx.WritePackage)
 }
 
-func GenConfig(args *clArgs) error {
+// cmdGenConfig generate a demo configuration file for the gentmpl tool.
+func cmdGenConfig(args *clArgs) error {
 	const text = `[templates]
 flat = ["flat/footer.tmpl", "flat/header.tmpl", "flat/page1.tmpl", "flat/page2and3.tmpl"]
 inhbase = ["inheritance/base.tmpl"]
@@ -155,10 +174,18 @@ Inh2 = {template="inh2"}
 		return err
 	}
 	ctx := cfg.Context
-	return genOutput(args.output, ctx.WriteConfig)
+	return writeOutput(args.output, ctx.WriteConfig)
 }
 
-// run parse cmd line, read the config file and generate the package
+// Run parses the command line arguments of the gentmpl tool.
+//
+// If -g option was specified, it generate a demo configuration file for the
+// gentmpl utility calling the CreateConfig method of a run.Context object.
+//
+// Otherwise it reads the configuration file for initialize a run.Context and
+// runs its CreatePackage method.
+//
+// It returns the code that should be used for os.Exit.
 func Run() int {
 	const msghelp = "Try 'gentmpl -h' for more information."
 
@@ -170,7 +197,7 @@ func Run() int {
 	}
 
 	if args.genConfig {
-		err := GenConfig(args)
+		err := cmdGenConfig(args)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			return 2
@@ -192,7 +219,7 @@ func Run() int {
 	}
 
 	// generate the package
-	err = genPackage(cfg)
+	err = cmdGenPackage(cfg)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err.Error())
 		return 1

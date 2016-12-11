@@ -1,7 +1,7 @@
 # gentmpl
 
-gentmpl is an utility that generates a go package for automatically parse and
-render text or html templates.
+gentmpl is an utility that generates a go package for parse and
+render html or text  templates.
 
 gentmpl reads a configuration file with two mandatory sections:
 
@@ -17,7 +17,7 @@ that to render the page all you have to do is:
 
 [![GoDoc](https://godoc.org/github.com/mmbros/gentmpl?status.svg)](https://godoc.org/github.com/mmbros/gentmpl)
 
-### Configuration
+## Configuration
 
 gentmpl reads from a TOML configuration file the parameters used to generate
 the code.
@@ -25,7 +25,7 @@ the code.
 The mandatory informations of the configuration file are the `templates` and
 `pages` sections.
 
-#### Templates
+### Templates
 
 The `templates` section defines the templates used to render the Pages.
 Each template must have name and an array of string item.
@@ -43,7 +43,7 @@ inh2 = ["inhbase", "inheritance/content2.tmpl"]
 inhbase = ["inheritance/base.tmpl"]
 ```
 
-#### Pages
+### Pages
 
 The `pages` section defines the pages to render.
 Each page must have a name, a template name and optionally a base name.
@@ -61,7 +61,7 @@ Pag3 = {template="flat", base="page-3"}
 ```
 
 
-### Generated Package
+## Generated Package
 
 The generated package exports an enum type `PageEnum` and a list of constant of
 the same type for each page to be rendered.
@@ -90,4 +90,11 @@ The following methods are defined on the `PageEnum` type:
   - `Template() template.Template`: returns the template
   - `Files() []string`: returns the files used by the page's template
 
+## Development notes
+
+The project layout follows [Writing Go Applications with Reusable Logic](https://npf.io/2016/10/reusable-commands/).
+
+See also:
+
+- [Gorram]https://github.com/natefinch/gorram
 
