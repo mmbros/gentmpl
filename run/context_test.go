@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/jteeuwen/go-bindata"
-	"github.com/mmbros/types"
+	"github.com/mmbros/gentmpl/run/types"
 )
 
 // Delete tmp folder mode values

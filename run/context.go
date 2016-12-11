@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"github.com/mmbros/gentmpl/run/collection"
-	"github.com/mmbros/types"
+	"github.com/mmbros/gentmpl/run/types"
 )
 
 const (
