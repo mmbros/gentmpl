@@ -4,6 +4,7 @@ gentmpl is a command line utility that generates a go package that parse and
 render html or text templates.
 
 [![GoDoc](https://godoc.org/github.com/mmbros/gentmpl?status.svg)](https://godoc.org/github.com/mmbros/gentmpl)
+[![Go Report Card](https://goreportcard.com/badge/github.com/mmbros/gentmpl)](https://goreportcard.com/report/github.com/mmbros/gentmpl)
 
 ## Installation
 
