@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func ExampleresolveIncludes() {
+func ExampleResolveIncludes() {
 	var (
 		mapping = map[string][]string{
 			"inc": {"header", "footer"},
@@ -69,7 +69,7 @@ func TestResolveIncludes(t *testing.T) {
 
 }
 
-func TestResolveIncludesLoop(t *testing.T) {
+func TestResolveIncludes_Loop(t *testing.T) {
 	var templates = map[string][]string{
 		"incA": {"A1", "incB"},
 		"incB": {"incA", "B1"},

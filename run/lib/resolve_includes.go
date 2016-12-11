@@ -1,3 +1,4 @@
+// Package lib implements some library functions used by gentmpl utility.
 package lib
 
 import "fmt"
