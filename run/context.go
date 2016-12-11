@@ -16,7 +16,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/mmbros/gentmpl/collection"
+	"github.com/mmbros/gentmpl/run/collection"
 	"github.com/mmbros/types"
 )
 
