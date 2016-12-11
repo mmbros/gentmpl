@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/mmbros/gentmpl/run/collection"
+	"github.com/mmbros/gentmpl/run/lib"
 	"github.com/mmbros/gentmpl/run/types"
 )
 
@@ -170,7 +171,7 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 
 	// resolve used templates
 	// mapping from template name -> (file1, file2, ...)
-	t2af, err := resolveIncludes(ctx.Templates, templates.ToSlice())
+	t2af, err := lib.ResolveIncludes(ctx.Templates, templates.ToSlice())
 	if err != nil {
 		return nil, err
 	}
