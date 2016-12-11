@@ -1,17 +1,19 @@
 # gentmpl
 
-gentmpl is an utility that generate a go package for load and render text or
-html templates.
+gentmpl is an utility that generates a go package for automatically parse and
+render text or html templates.
 
-It is base on a configuration file that must define two sections:
+gentmpl reads a configuration file with two mandatory sections:
 
 - `templates`: defines the templates used to render the pages
 - `pages`: defines the template and base names to render each page
 
-gentmpl generate a package in which for each page X it is defined a constant
-PageX of type PageEnum. To render the page all you have to do it's to call:
+gentmpl generates a package that automatically handle the creation of the
+templates, loading and parsing the files specified in the configuration.
+Moreover for each page of name _Name_ gentmpl defines a constant `PageName` so
+that to render the page all you have to do is:
 
-    err := PageX.Execute(w, data)
+    err := PageName.Execute(w, data)
 
 [![GoDoc](https://godoc.org/github.com/mmbros/gentmpl?status.svg)](https://godoc.org/github.com/mmbros/gentmpl)
 
