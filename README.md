@@ -11,10 +11,6 @@ render html or text templates.
 ```
 go get -u github.com/mmbros/gentmpl
 ```
-In the gentmpl directory execute:
-```
-go install
-```
 
 ## Usage
 
