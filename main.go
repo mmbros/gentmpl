@@ -1,3 +1,6 @@
+// === create context.tmpl.go to embed context.tmpl in run folder
+//go:generate go run run/genasset.go -i run/context.tmpl -p run -f getAsset
+
 // gentmpl command line tool is an utility that generates a go package for
 // parse and render html or text templates.
 //
