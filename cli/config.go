@@ -21,7 +21,7 @@ const (
 	clOutput    = "o"
 
 	// default values
-	defaultConfigFile = "gentmpl.toml"
+	defaultConfigFile = "gentmpl.conf"
 	defaultOutputFile = "" // if empty use StdOut
 )
 
