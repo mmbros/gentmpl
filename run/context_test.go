@@ -265,7 +265,7 @@ func writeBindata(ctx *Context, dir string) error {
 		return nil
 	}
 	path := filepath.Join(dir, "bindata.go")
-	prefix := filepath.Clean(filepath.Join(dir, ctx.TemplateBaseDir))
+	prefix := filepath.Clean(filepath.Join(dir, "..", templateBaseDir))
 
 	c := bindata.NewConfig()
 	c.Debug = ctx.NoCache
@@ -392,10 +392,9 @@ func TestRun(t *testing.T) {
 
 	// init context constant properties
 	ctx := &Context{
-		PackageName:     "main",
-		TemplateBaseDir: filepath.Join("..", templateBaseDir),
-		Pages:           pages,
-		Templates:       templates,
+		PackageName: "main",
+		Pages:       pages,
+		Templates:   templates,
 	}
 
 	// loops over context parameters
@@ -406,6 +405,11 @@ func TestRun(t *testing.T) {
 			types.AssetManagerNone,
 			types.AssetManagerGoBindata} {
 			ctx.AssetManager = assetmngr
+
+			ctx.TemplateBaseDir = ""
+			if assetmngr == types.AssetManagerNone {
+				ctx.TemplateBaseDir = filepath.Join("..", templateBaseDir)
+			}
 
 			for _, funcmap := range []string{"", "funcMap"} {
 				ctx.FuncMap = funcmap

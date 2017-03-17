@@ -60,19 +60,23 @@ import (
 
 
 {{ define "helpers" }}
-{{ if .AssetManager.IsNone -}}
-func files2paths(files []string) []string {
+func file2path(file string) string {
 	const templatesFolder = "{{ .TemplateBaseDir }}"
 	var path string
+	switch {
+	case len(file) == 0, file[0] == '.', file[0] == filepath.Separator:
+		path = file
+	default:
+		path = filepath.Join(templatesFolder, file)
+	}
+	return path
+}
+
+{{ if .AssetManager.IsNone -}}
+func files2paths(files []string) []string {
 	paths := make([]string, len(files))
 	for i, file := range files {
-		switch {
-		case len(file) == 0, file[0] == '.', file[0] == filepath.Separator:
-			path = file
-		default:
-			path = filepath.Join(templatesFolder, file)
-		}
-		paths[i] = path
+		paths[i] = file2path(file)
 	}
 	return paths
 }
@@ -139,8 +143,8 @@ files := page.Files()
 */}}
 // use go-bindata MustAsset func to load templates
 tmpl := template.New(filepath.Base(files[0])){{ if .FuncMap }}.Funcs({{ .FuncMap }}){{ end }}
-for _, path := range files {
-	tmpl.Parse(string(MustAsset(path)))
+for _, file := range files {
+	tmpl.Parse(string(MustAsset(file2path(file))))
 }
 return tmpl
 {{ else }}
@@ -321,8 +325,8 @@ func init(){
 -*/}}
 		// use go-bindata MustAsset func to load templates
 		tmpl := template.New(filepath.Base(files[0])){{ if .FuncMap }}.Funcs({{ .FuncMap }}){{ end }}
-		for _, path := range files {
-			tmpl.Parse(string(MustAsset(path)))
+		for _, file := range files {
+			tmpl.Parse(string(MustAsset(file2path(file))))
 		}
 		mTemplates[t] = tmpl
 {{- else -}}

@@ -19,6 +19,7 @@ const (
 	clGenConfig = "g"
 	clHelp      = "h"
 	clOutput    = "o"
+	clPrefix    = "p"
 
 	// default values
 	defaultConfigFile = "gentmpl.conf"
@@ -31,6 +32,7 @@ type clArgs struct {
 	genConfig bool
 	help      bool
 	output    string
+	prefix    string
 }
 
 type config struct {
@@ -101,6 +103,7 @@ func parseArgs() *clArgs {
 	flag.BoolVar(&args.debug, clDebug, false, "Debug mode. Do not cache templates and do not format generated code.")
 	flag.BoolVar(&args.help, clHelp, false, "Show command usage information.")
 	flag.BoolVar(&args.genConfig, clGenConfig, false, "Generate the configuration file instead of the package.")
+	flag.StringVar(&args.prefix, clPrefix, "", "Optional common prefix of the templates files.\n        If present, overwrites the \"template_base_dir\" config parameter.")
 
 	flag.Parse()
 
@@ -124,6 +127,9 @@ func parseConfig(args *clArgs) (*config, error) {
 	if args.debug {
 		cfg.NoGoFormat = true
 		cfg.NoCache = true
+	}
+	if args.prefix != "" {
+		cfg.TemplateBaseDir = args.prefix
 	}
 
 	return cfg, nil
