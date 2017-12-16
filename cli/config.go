@@ -9,7 +9,8 @@ import (
 	"os"
 
 	"github.com/mmbros/gentmpl/run"
-	"github.com/naoina/toml"
+	//"github.com/naoina/toml"
+	"github.com/timob/toml"
 )
 
 const (
