@@ -38,41 +38,41 @@ const (
 type Context struct {
 	// Do not cache the templates.
 	// A new template will be created on every page.Execute.
-	NoCache bool
+	NoCache bool `toml:"no_cache"`
 
 	// Do not format the generated code with go/format.
-	NoGoFormat bool
+	NoGoFormat bool `toml:"no_go_format"`
 
 	// Package name used in the generated code.
-	PackageName string
+	PackageName string `toml:"package_name"`
 
 	// Asset manager to use. Possible values:
 	// - none (default)
 	// - go-bindata
-	AssetManager types.AssetManager
+	AssetManager types.AssetManager `toml:"asset_manager"`
 
 	// Use text/template instead of html/template.
-	TextTemplate bool
+	TextTemplate bool `toml:"text_template"`
 
 	// Name of the template.FuncMap variable used in template creation.
 	// The variable must be defined in another file of the same package
 	// (ex: "templates/func-map.go").
 	// If empty, no funcMap will be used.
-	FuncMap string
+	FuncMap string `toml:"func_map"`
 
 	// Name of the PageEnum type definition.
-	PageEnumType string
+	PageEnumType string `toml:"page_enum_type"`
 
 	// Strings used as prefix and suffix in the PageEnum constants.
 	// Example:  page "CreateUser", prefix="Page", suffix="" -> PageCreateUser
-	PageEnumPrefix string
-	PageEnumSuffix string
+	PageEnumPrefix string `toml:"page_enum_prefix"`
+	PageEnumSuffix string `toml:"page_enum_suffix"`
 
 	// Name of the TemplateEnum type definition.
 	TemplateEnumType string
 
 	// Base folder of the templates files.
-	TemplateBaseDir string
+	TemplateBaseDir string `toml:"template_base_dir"`
 
 	// Mapping from template name to items used to create the template.
 	// Each item can be a:

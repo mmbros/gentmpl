@@ -3,7 +3,8 @@ package cli
 import "testing"
 
 const (
-	txtConfig = `[templates]
+	txtConfig = `template_base_dir = "tmpl/"
+[templates]
 flat = ["flat/footer.tmpl", "flat/header.tmpl", "flat/page1.tmpl", "flat/page2and3.tmpl"]
 inhbase = ["inheritance/base.tmpl"]
 inh1 = ["inhbase", "inheritance/content1.tmpl"]
@@ -23,6 +24,11 @@ func TestUnmarshalConfig(t *testing.T) {
 	if err != nil {
 		t.Errorf(err.Error())
 	}
+	want := "tmpl/"
+	if cfg.TemplateBaseDir != want {
+		t.Errorf("unmarshalConfig: TemplateBaseDir = %q, want %q", cfg.TemplateBaseDir, want)
+	}
+
 	if len(cfg.Pages) != 5 {
 		t.Errorf("unmarshalConfig: invalid number of pages: expected=%d, actual=%d", 5, len(cfg.Pages))
 	}
