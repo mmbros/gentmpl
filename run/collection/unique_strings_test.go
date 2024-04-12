@@ -2,7 +2,10 @@ package collection
 
 import (
 	"fmt"
+	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestUniqueStrings(t *testing.T) {
@@ -69,7 +72,7 @@ func TestUniqueStrings_ErriIndexOutOfRange(t *testing.T) {
 	defer func() {
 		msg := "runtime error: index out of range"
 		showerr := func(txt string) {
-			t.Errorf("Expecting %q, got: %s", msg, txt)
+			t.Errorf("Expecting %q, got: %q", msg, txt)
 		}
 		r := recover()
 		if r == nil {
@@ -78,7 +81,7 @@ func TestUniqueStrings_ErriIndexOutOfRange(t *testing.T) {
 			e, ok := r.(error)
 			// TODO: find a better to check "index out of range" error
 			if ok {
-				if e.Error() != msg {
+				if strings.Index(e.Error(), msg) != 0 {
 					showerr(e.Error())
 				}
 			} else {
@@ -119,4 +122,43 @@ func TestUniqueStrings_Sort(t *testing.T) {
 			t.Errorf("Value(%d): expecting %q, found %q", idx, expect, actual)
 		}
 	}
+}
+
+func TestUniqueStrings_Contains(t *testing.T) {
+	myslice := []string{"item3", "item2", "item4", "item1", "item3", "item3"}
+	col := NewUniqueStrings()
+	col.AddSlice(myslice)
+
+	tests := []struct {
+		item string
+		want bool
+	}{
+		{item: "item1", want: true},
+		{item: "item2", want: true},
+		{item: "item3", want: true},
+		{item: "item4", want: true},
+		{item: "item5", want: false},
+		{item: "item6", want: false},
+	}
+
+	for _, test := range tests {
+		got := col.Contains(test.item)
+		if got != test.want {
+			t.Errorf("Contains(%q) = %v, want %v", test.item, got, test.want)
+		}
+	}
+}
+
+func TestUniqueStrings_ToSlice(t *testing.T) {
+	myslice := []string{"item3", "item2", "item3", "item4", "item1", "item3"}
+	col := NewUniqueStrings()
+	col.AddSlice(myslice)
+
+	want := []string{"item3", "item2", "item4", "item1"}
+	got := col.ToSlice()
+
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("ToSlice() mismatch (-want +got):\n%s", diff)
+	}
+
 }

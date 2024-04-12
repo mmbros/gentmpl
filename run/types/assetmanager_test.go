@@ -136,7 +136,7 @@ func TestMarshal(t *testing.T) {
 				continue
 			}
 			actual := string(b)
-			expect := fmt.Sprintf("asset_manager=%q\n", tc.expected)
+			expect := fmt.Sprintf("asset_manager = %q\n", tc.expected)
 			if actual != expect {
 				t.Errorf("Marshal(%s): expected %q, got %q", tc.input.String(), expect, actual)
 			}

@@ -23,7 +23,7 @@ import (
 
 const (
 	// path of the template file
-	templateFile = "context.tmpl"
+	// templateFile = "context.tmpl"
 
 	defaultPackageName      = "templates"
 	defaultPageEnumType     = "PageEnum"
@@ -78,7 +78,7 @@ type Context struct {
 	// Each item can be a:
 	// - file path to parse in the template creation.
 	// - name of another template to include in the current template.
-	Templates map[string][]string
+	Templates map[string][]string `toml:"templates"`
 
 	// Mapping from page name to template name and base values used to render
 	// the page.
@@ -129,7 +129,7 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 
 	// asset manager
 	switch ctx.AssetManager {
-	case types.AssetManagerNone, types.AssetManagerGoBindata:
+	case types.AssetManagerNone:
 		// ok
 	default:
 		return nil, fmt.Errorf("AssetManager not supported: %q", ctx.AssetManager)
@@ -137,7 +137,7 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 
 	// pages
 	if len(ctx.Pages) == 0 {
-		return nil, errors.New("No pages found")
+		return nil, errors.New("no pages found")
 	}
 	pages := collection.NewUniqueStrings()
 	for pageName := range ctx.Pages {
@@ -150,11 +150,11 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 	for _, pageName := range pages.ToSlice() {
 		templateName := ctx.Pages[pageName].Template
 		if templateName == "" {
-			return nil, fmt.Errorf("Page must have a template: page=%s", pageName)
+			return nil, fmt.Errorf("page must have a template: page=%s", pageName)
 		}
 		_, ok := ctx.Templates[templateName]
 		if !ok {
-			return nil, fmt.Errorf("Template not found for page: page=%s, template=%s", pageName, templateName)
+			return nil, fmt.Errorf("template not found for page: page=%s, template=%s", pageName, templateName)
 		}
 		templates.Add(templateName)
 	}
@@ -281,7 +281,7 @@ func (ctx *Context) WritePackage(w io.Writer) error {
 		// execute format source
 		p, err = format.Source(buf.Bytes())
 		if err != nil {
-			return fmt.Errorf("Formatting source: %s", err.Error())
+			return fmt.Errorf("formatting source: %s", err.Error())
 		}
 	}
 

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -53,13 +52,13 @@ var pages = map[string]struct {
 	"Inh2": {"inh2", ""},
 }
 
-var results = map[string]string{
-	"Pag1": "<html><head></head><body>Page 1</body></html>",
-	"Pag2": "<html><head></head><body>Page 2</body></html>",
-	"Pag3": "<html><head></head><body>Page 3</body></html>",
-	"Inh1": "<html><head></head><body>content 1</body></html>",
-	"Inh2": "<html><head></head><body>content 2</body></html>",
-}
+// var results = map[string]string{
+// 	"Pag1": "<html><head></head><body>Page 1</body></html>",
+// 	"Pag2": "<html><head></head><body>Page 2</body></html>",
+// 	"Pag3": "<html><head></head><body>Page 3</body></html>",
+// 	"Inh1": "<html><head></head><body>content 1</body></html>",
+// 	"Inh2": "<html><head></head><body>content 2</body></html>",
+// }
 
 var fileinfos = []struct {
 	path    string
@@ -79,7 +78,8 @@ func writeFile(fullpath, content string) error {
 	if err := os.MkdirAll(folder, 0777); err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(fullpath, []byte(content), 0666); err != nil {
+
+	if err := os.WriteFile(fullpath, []byte(content), 0666); err != nil {
 		return err
 	}
 	return nil
@@ -107,7 +107,7 @@ func TestCheck(t *testing.T) {
 	// test no pages
 	ctx = &Context{}
 	err = ctx.Check()
-	checkErr(err, "no pages", "No pages found")
+	checkErr(err, "no pages", "no pages found")
 
 	// test page without a template
 	ctx = &Context{
@@ -119,7 +119,7 @@ func TestCheck(t *testing.T) {
 		},
 	}
 	err = ctx.Check()
-	checkErr(err, "page with no template", "Page must have a template")
+	checkErr(err, "page with no template", "page must have a template")
 
 	// test template's page not found
 	tmpl := map[string][]string{}
@@ -128,7 +128,7 @@ func TestCheck(t *testing.T) {
 	}
 	ctx = &Context{Pages: pages, Templates: tmpl}
 	err = ctx.Check()
-	checkErr(err, "no template", "Template not found for page")
+	checkErr(err, "no template", "template not found for page")
 
 	// test cyclic templates
 	ctx = &Context{
@@ -154,7 +154,7 @@ func TestWritePackage(t *testing.T) {
 		Pages:        pages,
 		Templates:    templates,
 		TextTemplate: true,
-		AssetManager: types.AssetManagerGoBindata}
+		AssetManager: types.AssetManagerNone}
 	buf := new(bytes.Buffer)
 	err := ctx.WritePackage(buf)
 	if err != nil {
@@ -194,7 +194,7 @@ func TestWriteConfig(t *testing.T) {
 // returns the name of the created folder
 func setupDirTemplates() string {
 	// creates a tmp root directory
-	tmpdir, err := ioutil.TempDir("", testDirPrefix)
+	tmpdir, err := os.MkdirTemp("", testDirPrefix)
 	if err != nil {
 		panic(err)
 	}
@@ -210,7 +210,7 @@ func setupDirTemplates() string {
 }
 
 // ctx2str returns a short string that represents the context.
-//   - am -> AssetManager : 0=none,  1=GoBindata
+//   - am -> AssetManager : 0=none,  1=GoBindata 2=GoRice
 //   - nc -> NoCache      : 0=false, 1=true
 //   - fm -> FuncMap      : 0=false, 1=true
 //   - nf -> NoGoFormat   : 0=false, 1=true
@@ -273,7 +273,7 @@ func writeBindata(ctx *Context, dir string) error {
 	c.Prefix = prefix
 	c.Package = ctx.PackageName
 	c.Input = []bindata.InputConfig{
-		bindata.InputConfig{
+		{
 			Path:      prefix,
 			Recursive: true,
 		},
@@ -403,7 +403,9 @@ func TestRun(t *testing.T) {
 
 		for _, assetmngr := range []types.AssetManager{
 			types.AssetManagerNone,
-			types.AssetManagerGoBindata} {
+			// types.AssetManagerGoBindata,
+			// types.AssetManagerGoRice,
+		} {
 			ctx.AssetManager = assetmngr
 
 			ctx.TemplateBaseDir = ""

@@ -10,7 +10,8 @@ import (
 
 	"github.com/mmbros/gentmpl/run"
 	//"github.com/naoina/toml"
-	"github.com/timob/toml"
+	// "github.com/timob/toml"
+	"github.com/pelletier/go-toml/v2"
 )
 
 const (
@@ -82,8 +83,7 @@ Moreover for each page of name Name gentmpl defines a constant PageName so that
 to render the page all you have to do is:
   err := PageName.Execute(w, data)
 
-Options:
-`)
+Options:`)
 	flag.PrintDefaults()
 	fmt.Fprintf(os.Stderr, `
 Examples:
@@ -147,7 +147,7 @@ func writeOutput(path string, fn func(io.Writer) error) error {
 		// create a new file
 		file, err := os.OpenFile(path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0660)
 		if err != nil {
-			return fmt.Errorf("Error writing output file: %s", err.Error())
+			return fmt.Errorf("error writing output file: %s", err.Error())
 		}
 		w = file
 		defer file.Close()
