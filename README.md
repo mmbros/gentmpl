@@ -44,13 +44,13 @@ instead of the package.
 
 Generate the templates package (using the default configuration file):
 ```
-genttmpl -o templates.go
+gentmpl -o templates.go
 ```
 
 Generate the templates package with debug mode using an esplicit configuration
 file:
 ```
-genttmpl -d -c tmpl.conf -o tmpl.go
+gentmpl -d -c tmpl.conf -o tmpl.go
 ```
 
 Generate a demo configuration file:
