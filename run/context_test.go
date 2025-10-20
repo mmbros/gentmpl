@@ -17,6 +17,7 @@ import (
 // Delete tmp folder mode values
 const (
 	// Never delete tmp folder
+	//lint:ignore U1000 Ignore unused
 	deleteDirNever = iota
 	// Delete tmp folder in case of success.
 	// If test fails, the tmp folder is not removed
@@ -487,21 +488,21 @@ func ctx2str(ctx *Context) string {
 
 func TestRunAll(t *testing.T) {
 	if testing.Short() {
-		t.Skip("TestRun: skipping test in short mode")
+		t.Skip("TestRunAll: skipping test in short mode")
 	}
 
 	// setup
 	root := setupDirTemplates()
-	t.Logf("TestRun: created TempDir %q", root)
+	t.Logf("TestRunAll: created TempDir %q", root)
 
 	// clean up
 	defer func() {
 		if (deleteDirMode == deleteDirAlways) ||
 			(deleteDirMode == deleteDirSuccess && !t.Failed()) {
 			os.RemoveAll(root)
-			t.Logf("TestRun: deleted TempDir %q", root)
+			t.Logf("TestRunAll: deleted TempDir %q", root)
 		} else {
-			t.Logf("TestRun: don't delete TempDir %q", root)
+			t.Logf("TestRunAll: don't delete TempDir %q", root)
 		}
 	}()
 

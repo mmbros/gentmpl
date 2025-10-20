@@ -9,6 +9,7 @@ package run
 
 import (
 	"bytes"
+	_ "embed"
 	"errors"
 	"fmt"
 	"go/format"
@@ -21,6 +22,9 @@ import (
 	"github.com/mmbros/gentmpl/run/lib"
 	"github.com/mmbros/gentmpl/run/types"
 )
+
+//go:embed "context.tmpl"
+var contextTmpl string
 
 const (
 	// path of the template file
@@ -248,7 +252,7 @@ func getTemplate() *template.Template {
 	t := template.New("").Funcs(templateFuncMap)
 	//t.Parse(string(MustAsset(templateFile)))
 	var err error
-	t, err = t.Parse(getAsset())
+	t, err = t.Parse(contextTmpl)
 	if err != nil {
 		panic(err)
 	}
