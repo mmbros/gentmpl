@@ -1,12 +1,16 @@
 {{ define "package" }}
 {{- template "header" . }}
+{{ if .AssetManager.IsEmbed -}}
+    {{ template "asset-embed-files" . }}
+{{- end }}
 {{ template "definitions" . }}
 {{ template "helpers" . }}
 {{ template "func-page-files" . }}
 {{ if .NoCache }}
+    {{ template "func-init-templates-nocache" . }}
 	{{ template "func-page-template-nocache" . }}
 {{ else }}
-	{{ template "func-init" . }}
+    {{ template "func-init-templates" . }}
 	{{ template "func-page-template" . }}
 {{ end }}
 {{ template "func-page-base" . }}
@@ -31,7 +35,19 @@ import (
 {{- end }}
 	"io"
 	"path/filepath"
+{{ if .AssetManager.IsEmbed -}}
+	"embed"
+{{- end }}
 )
+{{ end }}
+
+
+
+{{ define "asset-embed-files" }}
+	{{ range $idx, $file := .Files -}}
+//go:embed "{{ join $.TemplateBaseDir $file }}"
+	{{ end -}}
+var content embed.FS
 {{ end }}
 
 
@@ -43,8 +59,6 @@ import (
 		// {{ .PageEnumType }} is the type of the Pages
 		{{ .PageEnumType }} {{ uint (len .Pages) }}
 	)
-	// number of templates
-	const templatesLen = {{ len .Templates }}
 	// {{ .PageEnumType }} constants
 	const (
 		{{ range $idx, $elem := .Pages -}}
@@ -52,6 +66,9 @@ import (
 		{{ end -}}
 	)
 	{{ if not .NoCache }}
+	// number of templates
+	const templatesLen = {{ len .Templates }}
+
 	// module variables
 	var mTemplates [templatesLen]*template.Template
 	{{ end }}
@@ -72,7 +89,7 @@ func file2path(file string) string {
 	return path
 }
 
-{{ if .AssetManager.IsNone -}}
+{{ if (or .AssetManager.IsNone .AssetManager.IsEmbed) -}}
 func files2paths(files []string) []string {
 	paths := make([]string, len(files))
 	for i, file := range files {
@@ -86,7 +103,7 @@ func files2paths(files []string) []string {
 func (t {{ .TemplateEnumType }}) Files() []string {
 	var (
 		// files paths
-		files = [...]string{ {{ astr2str .Files }}  }
+		files = [...]string{ {{ astr2str .Files }} }
 		// template-index to array of file-index
 		ti2afi = [...][]{{ uint (len .Files) }}{
 		{{ range $idx, $aint := .TI2AFI -}}
@@ -198,6 +215,7 @@ func (page {{ .PageEnumType }}) Execute(wr io.Writer, data interface{}) error {
 {{ define "func-main" }}
 /*
 func main(){
+	InitTemplates()
 	var page = {{ .PageName (index .Pages 0) }}
 	wr := os.Stdout
 
@@ -237,7 +255,9 @@ no_go_format = true
 
 # Asset manager to use. Possible values:
 # - none (default)
-# - go-bindata
+# - embed 
+# - go-bindata (unsupported)
+# - go.rice (unsupported)
 {{ if not .AssetManager.IsNone -}}
 asset_manager = "{{ .AssetManager }}"
 {{- else -}}
@@ -313,9 +333,12 @@ template_base_dir = "{{ .TemplateBaseDir }}"
 {{ end }}
 
 
+{{ define "func-init-templates-nocache" }}
+func InitTemplates(){}
+{{ end }}
 
-{{ define "func-init" }}
-func init(){
+{{ define "func-init-templates" }}
+func InitTemplates(){
 	// init base templates
 	for t := {{ .TemplateEnumType }}(0); t<templatesLen; t++ {
 		files := t.Files()
@@ -329,6 +352,17 @@ func init(){
 			tmpl.Parse(string(MustAsset(file2path(file))))
 		}
 		mTemplates[t] = tmpl
+{{- else if .AssetManager.IsEmbed -}}
+{{/*-
+	asset_manager == embed
+-*/}}
+		mTemplates[t] = template.Must(
+			{{- if .FuncMap -}}
+			template.New(filepath.Base(files[0])).Funcs({{ .FuncMap }}).ParseFS(content, files2paths(files)...)
+			{{- else -}}
+			template.ParseFS(content, files2paths(files)...)
+			{{- end -}}
+		)
 {{- else -}}
 {{/*-
 	asset_manager == none
@@ -345,4 +379,9 @@ func init(){
 }
 {{ end }}
 
+{{ define "func-init" }}
+func init(){
+	InitTemplates()
+}
+{{ end }}
 

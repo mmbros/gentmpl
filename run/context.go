@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"go/format"
 	"io"
+	"path/filepath"
 	"text/template"
 	"time"
 
@@ -129,10 +130,10 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 
 	// asset manager
 	switch ctx.AssetManager {
-	case types.AssetManagerNone:
+	case types.AssetManagerNone, types.AssetManagerEmbed:
 		// ok
 	default:
-		return nil, fmt.Errorf("AssetManager not supported: %q", ctx.AssetManager)
+		return nil, fmt.Errorf("assetManager not supported: %q", ctx.AssetManager)
 	}
 
 	// pages
@@ -241,6 +242,7 @@ func getTemplate() *template.Template {
 		"uint":     uint,
 		"astr2str": astr2str,
 		"aint2str": aint2str,
+		"join":     filepath.Join,
 	}
 	// getTemplate create a new template and parse templateFile into it
 	t := template.New("").Funcs(templateFuncMap)

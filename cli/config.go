@@ -5,12 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/mmbros/gentmpl/run"
-	//"github.com/naoina/toml"
-	// "github.com/timob/toml"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -60,7 +57,7 @@ func loadConfigFromFile(path string) (*config, error) {
 	}
 	defer f.Close()
 	// read config file
-	buf, err := ioutil.ReadAll(f)
+	buf, err := io.ReadAll(f)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +86,7 @@ Options:`)
 Examples:
 
   Generate the templates package
-    genttmpl -c %[1]s -o templates.go
+    gentmpl -c %[1]s -o templates.go
 
   Generate a demo configuration file
     gentmpl -g -o %[1]s
