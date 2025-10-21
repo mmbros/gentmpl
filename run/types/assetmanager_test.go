@@ -78,6 +78,9 @@ func TestUnmarshal(t *testing.T) {
 		{"Go.Rice", AssetManagerGoRice, true},
 		{"Rice", AssetManagerGoRice, true},
 		{"Ri.ce", AssetManagerGoRice, false},
+		{"Embed", AssetManagerEmbed, true},
+		{"go:EMBED", AssetManagerEmbed, true},
+		{"go_embed", AssetManagerEmbed, false},
 	}
 
 	type config struct {
@@ -119,6 +122,7 @@ func TestMarshal(t *testing.T) {
 		{AssetManagerGoRice, "go.rice", true},
 		{AssetManager(100), "", false},
 		{AssetManagerNone, "none", true},
+		{AssetManagerEmbed, "embed", true},
 	}
 
 	type config struct {
