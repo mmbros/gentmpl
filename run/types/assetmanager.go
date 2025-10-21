@@ -18,7 +18,7 @@ const (
 )
 
 // string representation of AssetManager
-var reprAssetManager = [...]string{"none", "embed", "go-bindata", "go.rice"}
+var reprAssetManager = [...]string{"none", "go-bindata", "go.rice", "embed"}
 
 // IsNone returns true if AssetManager is None
 func (am AssetManager) IsNone() bool { return am == AssetManagerNone }
