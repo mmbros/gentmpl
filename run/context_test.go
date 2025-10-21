@@ -145,7 +145,7 @@ func TestCheck(t *testing.T) {
 		},
 	}
 	err = ctx.Check()
-	checkErr(err, "cyclic templates", "Found invalid cycle")
+	checkErr(err, "cyclic templates", "found invalid cycle")
 
 }
 

@@ -55,7 +55,7 @@ func (am AssetManager) String() string {
 	return reprAssetManager[am]
 }
 
-// UnmarshalTOML implements the toml.Unmarshaler interface.
+// UnmarshalText implements the toml.Unmarshaler interface.
 func (am *AssetManager) UnmarshalText(data []byte) (err error) {
 	// ref: https://godoc.org/github.com/naoina/toml#Unmarshaler
 	s := string(data)
