@@ -19,6 +19,7 @@ const (
 	clHelp      = "h"
 	clOutput    = "o"
 	clPrefix    = "p"
+	clVersion   = "v"
 
 	// default values
 	defaultConfigFile = "gentmpl.conf"
@@ -32,6 +33,7 @@ type clArgs struct {
 	help      bool
 	output    string
 	prefix    string
+	version   bool
 }
 
 type config struct {
@@ -101,7 +103,8 @@ func parseArgs() *clArgs {
 	flag.BoolVar(&args.debug, clDebug, false, "Debug mode. Do not cache templates and do not format generated code.")
 	flag.BoolVar(&args.help, clHelp, false, "Show command usage information.")
 	flag.BoolVar(&args.genConfig, clGenConfig, false, "Generate the configuration file instead of the package.")
-	flag.StringVar(&args.prefix, clPrefix, "", "Optional common prefix of the templates files.\n        If present, overwrites the \"template_base_dir\" config parameter.")
+	flag.StringVar(&args.prefix, clPrefix, "", "Optional common prefix of the templates files.\nIf present, overwrites the \"template_base_dir\" config parameter.")
+	flag.BoolVar(&args.version, clVersion, false, "Show version information.")
 
 	flag.Parse()
 
@@ -197,6 +200,11 @@ func Run() int {
 
 	if args.help {
 		cmdHelp()
+		return 0
+	}
+
+	if args.version {
+		cmdVersion(os.Stdout, "gentmpl")
 		return 0
 	}
 
