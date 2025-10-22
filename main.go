@@ -13,7 +13,8 @@
 // templates, loading and parsing the files specified in the configuration.
 // Moreover for each page of name Name gentmpl defines a constant PageName so
 // that to render the page all you have to do is:
-//   err := PageName.Execute(w, data)
+//
+//	err := PageName.Execute(w, data)
 //
 // If -g option was specified, gentmpl generate a demo configuration file.
 package main

@@ -22,7 +22,7 @@ Inh2 = {template="inh2"}
 func TestUnmarshalConfig(t *testing.T) {
 	cfg, err := unmarshalConfig([]byte(txtConfig))
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err)
 	}
 	want := "tmpl/"
 	if cfg.TemplateBaseDir != want {
