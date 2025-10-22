@@ -17,6 +17,7 @@ import (
 // Delete tmp folder mode values
 const (
 	// Never delete tmp folder
+	//lint:ignore U1000 Ignore unused
 	deleteDirNever = iota
 	// Delete tmp folder in case of success.
 	// If test fails, the tmp folder is not removed
@@ -144,7 +145,7 @@ func TestCheck(t *testing.T) {
 		},
 	}
 	err = ctx.Check()
-	checkErr(err, "cyclic templates", "Found invalid cycle")
+	checkErr(err, "cyclic templates", "found invalid cycle")
 
 }
 
@@ -158,7 +159,7 @@ func TestWritePackage(t *testing.T) {
 	buf := new(bytes.Buffer)
 	err := ctx.WritePackage(buf)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 	var find string
 
@@ -186,7 +187,7 @@ func TestWriteConfig(t *testing.T) {
 	w := new(bytes.Buffer)
 	err := ctx.WriteConfig(w)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Error(err.Error())
 	}
 }
 
@@ -198,53 +199,22 @@ func setupDirTemplates() string {
 	if err != nil {
 		panic(err)
 	}
-	// creates the templates files
-	for _, fi := range fileinfos {
-		out := filepath.Join(tmpdir, templateBaseDir, fi.path)
-		if err := writeFile(out, fi.content); err != nil {
-			panic(err)
-		}
-	}
+
 	// return the name of the tmp root directory
 	return tmpdir
 }
 
-// ctx2str returns a short string that represents the context.
-//   - am -> AssetManager : 0=none,  1=GoBindata 2=GoRice
-//   - nc -> NoCache      : 0=false, 1=true
-//   - fm -> FuncMap      : 0=false, 1=true
-//   - nf -> NoGoFormat   : 0=false, 1=true
-func ctx2str(ctx *Context) string {
-	var b bytes.Buffer
-	writeBool := func(x bool) {
-		ch := '0'
-		if x {
-			ch = '1'
+// writeTmplFolder create the folder with the templates
+func writeTmplFolder(ctx *Context, dir string) error {
+
+	// creates the templates files
+	for _, fi := range fileinfos {
+		out := filepath.Join(dir, templateBaseDir, fi.path)
+		if err := writeFile(out, fi.content); err != nil {
+			return err
 		}
-		b.WriteRune(ch)
 	}
-	writeSep := func() { b.WriteRune('-') }
-
-	b.WriteString("am")
-	b.WriteString(fmt.Sprintf("%d", ctx.AssetManager))
-
-	writeSep()
-	b.WriteString("nc")
-	writeBool(ctx.NoCache)
-
-	writeSep()
-	b.WriteString("fm")
-	writeBool(ctx.FuncMap != "")
-
-	//writeSep()
-	//b.WriteString("nf")
-	//writeBool(ctx.NoGoFormat)
-
-	//writeSep()
-	//b.WriteString("tt")
-	//writeBool(ctx.TextTemplate)
-
-	return b.String()
+	return nil
 }
 
 // writeTemplates create the templates generated file
@@ -314,6 +284,7 @@ import (
 )
 
 func main(){
+	InitTemplates()
 	var page PageEnum = PageInh1
 	wr := os.Stdout
 
@@ -323,6 +294,22 @@ func main(){
 }
 `
 	return writeFile(path, text)
+}
+
+// create a main file
+func writeMod(ctx *Context, dir string) error {
+	var out []byte
+	var err error
+	cmdline := fmt.Sprintf("cd %s && go mod init example.com/test/gentmpl", dir)
+	cmd := exec.Command("sh", "-c", cmdline)
+	out, err = cmd.CombinedOutput()
+	sout := string(out)
+
+	if err != nil {
+		return errors.New(sout)
+	}
+
+	return nil
 }
 
 func execGoRun(dir string) error {
@@ -346,13 +333,20 @@ func execGoRun(dir string) error {
 func subtestRun(ctx *Context, folder, root string, t *testing.T) {
 
 	var mapFuncs = map[string]func(*Context, string) error{
+		"tmpl":      writeTmplFolder,
 		"templates": writeTemplates,
 		"funcmap":   writeFuncmap,
 		"bindata":   writeBindata,
 		"main":      writeMain,
+		"go.mod":    writeMod,
 	}
 	var numerr int
 	dir := filepath.Join(root, folder)
+
+	//  create the subtest folder
+	if err := os.MkdirAll(dir, 0777); err != nil {
+		t.Error(err)
+	}
 
 	// create the needed files in the dir
 	for title, fn := range mapFuncs {
@@ -370,49 +364,170 @@ func subtestRun(ctx *Context, folder, root string, t *testing.T) {
 	}
 }
 
-func TestRun(t *testing.T) {
+// func TestRun(t *testing.T) {
+// 	if testing.Short() {
+// 		t.Skip("TestRun: skipping test in short mode")
+// 	}
+
+// 	// setup
+// 	root := setupDirTemplates()
+// 	t.Logf("TestRun: created TempDir %q", root)
+
+// 	// clean up
+// 	defer func() {
+// 		if (deleteDirMode == deleteDirAlways) ||
+// 			(deleteDirMode == deleteDirSuccess && !t.Failed()) {
+// 			os.RemoveAll(root)
+// 			t.Logf("TestRun: deleted TempDir %q", root)
+// 		} else {
+// 			t.Logf("TestRun: don't delete TempDir %q", root)
+// 		}
+// 	}()
+
+// 	tests := []struct {
+// 		name         string
+// 		noCache      bool
+// 		assetManager types.AssetManager
+// 		funcMap      string
+// 	}{
+// 		{
+// 			name: "nc0-am_none-fm0",
+// 		},
+// 		{
+// 			name:    "nc1-am_none-fm0",
+// 			noCache: true,
+// 		},
+// 		{
+// 			name:         "nc0-am_embed-fm0",
+// 			assetManager: types.AssetManagerEmbed,
+// 		},
+// 		{
+// 			name:         "nc1-am_embed-fm0",
+// 			noCache:      true,
+// 			assetManager: types.AssetManagerEmbed,
+// 		},
+// 		{
+// 			name:    "nc0-am_none-fm1",
+// 			funcMap: "funcMap",
+// 		},
+// 		{
+// 			name:    "nc1-am_none-fm1",
+// 			noCache: true,
+// 			funcMap: "funcMap",
+// 		},
+// 		{
+// 			name:         "nc0-am_embed-fm1",
+// 			assetManager: types.AssetManagerEmbed,
+// 			funcMap:      "funcMap",
+// 		},
+// 		{
+// 			name:         "nc1-am_embed-fm1",
+// 			noCache:      true,
+// 			assetManager: types.AssetManagerEmbed,
+// 			funcMap:      "funcMap",
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+
+// 			// init context constant properties
+// 			ctx := &Context{
+// 				PackageName:     "main",
+// 				TemplateBaseDir: templateBaseDir,
+// 				Pages:           pages,
+// 				Templates:       templates,
+// 				NoCache:         tt.noCache,
+// 				AssetManager:    tt.assetManager,
+// 				FuncMap:         tt.funcMap,
+// 				NoGoFormat:      true,
+// 			}
+
+// 			subtestRun(ctx, tt.name, root, t)
+// 		})
+// 	}
+
+// }
+
+// ctx2str returns a short string that represents the context.
+//   - am -> AssetManager : 0=none,  1=GoBindata 2=GoRice 3=Embed
+//   - nc -> NoCache      : 0=false, 1=true
+//   - fm -> FuncMap      : 0=false, 1=true
+//   - nf -> NoGoFormat   : 0=false, 1=true
+func ctx2str(ctx *Context) string {
+	var b bytes.Buffer
+	writeBool := func(x bool) {
+		ch := '0'
+		if x {
+			ch = '1'
+		}
+		b.WriteRune(ch)
+	}
+	writeSep := func() { b.WriteRune('-') }
+
+	b.WriteString("am")
+	b.WriteString(fmt.Sprintf("%d", ctx.AssetManager))
+
+	writeSep()
+	b.WriteString("nc")
+	writeBool(ctx.NoCache)
+
+	writeSep()
+	b.WriteString("fm")
+	writeBool(ctx.FuncMap != "")
+
+	// writeSep()
+	// b.WriteString("nf")
+	// writeBool(ctx.NoGoFormat)
+
+	// writeSep()
+	// b.WriteString("tt")
+	// writeBool(ctx.TextTemplate)
+
+	return b.String()
+}
+
+func TestRunAll(t *testing.T) {
 	if testing.Short() {
-		t.Skip("TestRun: skipping test in short mode")
+		t.Skip("TestRunAll: skipping test in short mode")
 	}
 
 	// setup
 	root := setupDirTemplates()
-	t.Logf("TestRun: created TempDir %q", root)
+	t.Logf("TestRunAll: created TempDir %q", root)
 
 	// clean up
 	defer func() {
 		if (deleteDirMode == deleteDirAlways) ||
 			(deleteDirMode == deleteDirSuccess && !t.Failed()) {
 			os.RemoveAll(root)
-			t.Logf("TestRun: deleted TempDir %q", root)
+			t.Logf("TestRunAll: deleted TempDir %q", root)
 		} else {
-			t.Logf("TestRun: don't delete TempDir %q", root)
+			t.Logf("TestRunAll: don't delete TempDir %q", root)
 		}
 	}()
 
 	// init context constant properties
 	ctx := &Context{
-		PackageName: "main",
-		Pages:       pages,
-		Templates:   templates,
+		PackageName:     "main",
+		Pages:           pages,
+		Templates:       templates,
+		TemplateBaseDir: templateBaseDir,
 	}
 
 	// loops over context parameters
+
+	// NoCache
 	for _, nocache := range []bool{false, true} {
 		ctx.NoCache = nocache
 
+		// AssetManager
 		for _, assetmngr := range []types.AssetManager{
 			types.AssetManagerNone,
-			// types.AssetManagerGoBindata,
-			// types.AssetManagerGoRice,
+			types.AssetManagerEmbed,
 		} {
 			ctx.AssetManager = assetmngr
 
-			ctx.TemplateBaseDir = ""
-			if assetmngr == types.AssetManagerNone {
-				ctx.TemplateBaseDir = filepath.Join("..", templateBaseDir)
-			}
-
+			// Funcmap
 			for _, funcmap := range []string{"", "funcMap"} {
 				ctx.FuncMap = funcmap
 

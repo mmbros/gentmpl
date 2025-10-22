@@ -23,7 +23,7 @@ func ResolveIncludes(mapping map[string][]string, names []string) (map[string][]
 		}
 
 		if _, ok := visited[name]; ok {
-			return fmt.Errorf("Found invalid cycle (%s)", name)
+			return fmt.Errorf("found invalid cycle (%s)", name)
 		}
 
 		// add name to the set of already included templates

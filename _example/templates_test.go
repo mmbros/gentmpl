@@ -9,9 +9,14 @@ func TestPageExecute(t *testing.T) {
 	var testCases = []struct {
 		page PageEnum
 	}{
+		{PagePag1},
+		{PagePag2},
+		{PagePag3},
 		{PageInh1},
 		{PageInh2},
 	}
+
+	InitTemplates()
 
 	wr := new(bytes.Buffer)
 

@@ -5,12 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/mmbros/gentmpl/run"
-	//"github.com/naoina/toml"
-	// "github.com/timob/toml"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -22,6 +19,7 @@ const (
 	clHelp      = "h"
 	clOutput    = "o"
 	clPrefix    = "p"
+	clVersion   = "v"
 
 	// default values
 	defaultConfigFile = "gentmpl.conf"
@@ -35,6 +33,7 @@ type clArgs struct {
 	help      bool
 	output    string
 	prefix    string
+	version   bool
 }
 
 type config struct {
@@ -60,7 +59,7 @@ func loadConfigFromFile(path string) (*config, error) {
 	}
 	defer f.Close()
 	// read config file
-	buf, err := ioutil.ReadAll(f)
+	buf, err := io.ReadAll(f)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +88,7 @@ Options:`)
 Examples:
 
   Generate the templates package
-    genttmpl -c %[1]s -o templates.go
+    gentmpl -c %[1]s -o templates.go
 
   Generate a demo configuration file
     gentmpl -g -o %[1]s
@@ -104,7 +103,8 @@ func parseArgs() *clArgs {
 	flag.BoolVar(&args.debug, clDebug, false, "Debug mode. Do not cache templates and do not format generated code.")
 	flag.BoolVar(&args.help, clHelp, false, "Show command usage information.")
 	flag.BoolVar(&args.genConfig, clGenConfig, false, "Generate the configuration file instead of the package.")
-	flag.StringVar(&args.prefix, clPrefix, "", "Optional common prefix of the templates files.\n        If present, overwrites the \"template_base_dir\" config parameter.")
+	flag.StringVar(&args.prefix, clPrefix, "", "Optional common prefix of the templates files.\nIf present, overwrites the \"template_base_dir\" config parameter.")
+	flag.BoolVar(&args.version, clVersion, false, "Show version information.")
 
 	flag.Parse()
 
@@ -200,6 +200,11 @@ func Run() int {
 
 	if args.help {
 		cmdHelp()
+		return 0
+	}
+
+	if args.version {
+		cmdVersion(os.Stdout, "gentmpl")
 		return 0
 	}
 
