@@ -1,9 +1,3 @@
-// === create context.tmpl.go to embed context.tmpl
-//go:generate go run genasset.go -i context.tmpl -p run -f getAsset
-//
-// === create bindata.go to embed context.tmpl
-//#go:generate go-bindata -pkg run -nometadata context.tmpl
-
 // Package run provide the logic for generating code for the gentmpl tool.
 package run
 

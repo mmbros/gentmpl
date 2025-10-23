@@ -236,10 +236,11 @@ package_name = "{{ .PackageName }}"
 #package_name = ""
 {{- end }}
 
-# Do not cache the templates.
+# Do not cache the templates. 
 # A new template will be created on every page.Execute.
 # Usefull for debug purposes.
-{{ if .NoCache -}}
+# Ignored if an asset_manager is used.
+{{ if .NoCache -}}# A new template will be created on every page.Execute.
 no_cache = true
 {{- else -}}
 #no_cache = false
@@ -256,8 +257,6 @@ no_go_format = true
 # Asset manager to use. Possible values:
 # - none (default)
 # - embed 
-# - go-bindata (unsupported)
-# - go.rice (unsupported)
 {{ if not .AssetManager.IsNone -}}
 asset_manager = "{{ .AssetManager }}"
 {{- else -}}
@@ -314,6 +313,8 @@ template_base_dir = "{{ .TemplateBaseDir }}"
 #   - path of a file to load in the template creation. The file path is
 #     relative to the template_base_dir folder.
 #   - name of another template to include in the current template.
+#
+{{- template "template-content-example" . }}
 [templates]
 {{- range $name, $files := .Templates }}
 {{ $name }} = [{{ astr2str $files }}]
@@ -385,3 +386,14 @@ func init(){
 }
 {{ end }}
 
+
+{{ define "template-content-example" }}
+# Example templates contents:
+#    "flat/header.tmpl"         : {{`"{{define "header"}}<html><head></head><body>{{end}}"`}}
+#    "flat/footer.tmpl"         : {{`"{{define "footer"}}</body></html>{{end}}"`}}
+#    "flat/page1.tmpl"          : {{`"{{define "page-1"}}{{template "header"}}Page 1{{template "footer"}}{{end}}"`}}
+#    "flat/page2and3.tmpl"      : {{`"{{define "page-2"}}{{template "header"}}Page 2{{template "footer"}}{{end}}{{define "page-3"}}{{template "header"}}Page 3{{template "footer"}}{{end}}"`}}
+#    "inheritance/base.tmpl"    : {{`"<html><head></head><body>{{template "content" .}}</body></html>"`}}
+#    "inheritance/content1.tmpl": {{`"{{define "content"}}content 1{{end}}"`}}
+#    "inheritance/content2.tmpl": {{`"{{define "content"}}content 2{{end}}"`}}
+{{ end }}
