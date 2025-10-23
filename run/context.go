@@ -17,7 +17,7 @@ import (
 	"github.com/mmbros/gentmpl/run/types"
 )
 
-//go:embed "context.tmpl"
+//go:embed "context.go.tmpl"
 var contextTmpl string
 
 const (
