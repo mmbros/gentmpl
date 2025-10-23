@@ -1,4 +1,4 @@
-package main
+package templates
 
 import (
 	"html/template"
@@ -12,6 +12,9 @@ var funcMap = template.FuncMap{
 	"ToUpper": strings.ToUpper,
 }
 
+// formatItWeekday is an exemple of custom template func
+//
+//lint:ignore U1000 Ignore unused
 func formatItWeekday(t time.Time) string {
 	s := [...]string{"dom", "lun", "mar", "mer", "gio", "ven", "sab"}
 	return s[t.Weekday()]
