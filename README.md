@@ -17,28 +17,56 @@ go get -u github.com/mmbros/gentmpl
 ```
 Usage: gentmpl [OPTION]...
 
-Options:
+gentmpl is an utility that generates a go package for parse and render html or
+text templates.
 
+gentmpl reads a configuration file with two mandatory sections:
+  - templates: defines the templates used to render the pages
+  - pages: defines the template and base names to render each page
+
+gentmpl generates a package that automatically handle the creation of the
+templates, loading and parsing the files specified in the configuration.
+Moreover for each page of name Name gentmpl defines a constant PageName so that
+to render the page all you have to do is:
+  err := PageName.Execute(w, data)
+
+Options:
   -c string
-    	Configuration file used to generate the package. (default "gentmpl.conf")
-  -d	Debug mode. Do not cache templates and do not format generated code.
-  -g	Generate the configuration file instead of the package.
-  -h	Show command usage information.
+        Configuration file used to generate the package. (default "gentmpl.conf")
+  -d    Debug mode. Overwrite configuration setting:
+        do not cache templates, do not use asset manager and do not format generated code.
+  -g    Generate the configuration file instead of the package.
+  -h    Show command usage information.
   -o string
-    	Optional output file for package/config file. If empty stdout will be used.
+        Optional output file for package/config file. If empty stdout will be used.
+  -p string
+        Optional common prefix of the templates files.
+        If present, overwrites the "template_base_dir" config parameter.
+  -v    Show version information.
+
+Examples:
+
+  Generate the templates package
+    gentmpl -c gentmpl.conf -o templates.go
+
+  Generate a demo configuration file
+    gentmpl -g -o gentmpl.conf
+
 ```
 
 ### Description
 
-Without the `-g` option, gentmpl generates a package that automatically handle
-the creation of the templates, loading and parsing the files specified in the
-configuration.  Moreover for each page of name _Name_ gentmpl defines a
+gentmpl generates a package that automatically handle the creation of the
+templates, loading and parsing the files specified in the configuration.
+Moreover for each page of name _Name_ gentmpl defines a 
 constant `PageName` so that to render the page all you have to do is:
 
     err := PageName.Execute(w, data)
 
 In case the `-g` option is given, gentmpl generates a demo configuration file,
 instead of the package.
+
+In case the `-v` option is given, gentmpl print version information and exit.
 
 ### Examples:
 
