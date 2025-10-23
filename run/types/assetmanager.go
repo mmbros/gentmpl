@@ -11,9 +11,9 @@ type AssetManager uint8
 
 // AssetManager possible values
 const (
-	AssetManagerNone AssetManager = iota
-	AssetManagerGoBindata
-	AssetManagerGoRice
+	AssetManagerNone      AssetManager = iota
+	AssetManagerGoBindata              // unsupported
+	AssetManagerGoRice                 // unsupported
 	AssetManagerEmbed
 )
 
@@ -53,6 +53,16 @@ func (am AssetManager) String() string {
 		return fmt.Sprint("AssetManager(", int(am), ")")
 	}
 	return reprAssetManager[am]
+}
+
+// Set function for implementing flag.Value interface.
+func (am *AssetManager) Set(s string) error {
+	if u, err := ParseAssetManager(s); err != nil {
+		return err
+	} else {
+		*am = u
+	}
+	return nil
 }
 
 // UnmarshalText implements the toml.Unmarshaler interface.

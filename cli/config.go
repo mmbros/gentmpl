@@ -16,27 +16,32 @@ const (
 	appName = "gentmpl"
 
 	// name of the command line parameters
-	clConfig    = "c"
-	clDebug     = "d"
-	clGenConfig = "g"
-	clHelp      = "h"
-	clOutput    = "o"
-	clPrefix    = "p"
-	clVersion   = "v"
+	clConfig       = "c"
+	clDebug        = "d"
+	clGenConfig    = "g"
+	clHelp         = "h"
+	clOutput       = "o"
+	clPrefix       = "p"
+	clVersion      = "v"
+	clAssetManager = "asset-manager"
 
 	// default values
-	defaultConfigFile = appName + ".conf"
-	defaultOutputFile = "" // if empty use StdOut
+	defaultConfigFile   = appName + ".conf"
+	defaultOutputFile   = "" // if empty use StdOut
+	defaultAssetManager = types.AssetManagerNone
 )
 
 type cmdlineInfo struct {
-	config    string
-	debug     bool
-	genConfig bool
-	help      bool
-	output    string
-	prefix    string
-	version   bool
+	config       string
+	debug        bool
+	genConfig    bool
+	help         bool
+	output       string
+	prefix       string
+	version      bool
+	assetManager types.AssetManager
+
+	hasAssetManager bool
 }
 
 type config struct {
@@ -115,7 +120,35 @@ func (c *cmdlineInfo) newFlagSet() *flag.FlagSet {
 	fs.StringVar(&c.prefix, clPrefix, "", "Optional common prefix of the templates files.\nIf present, overwrites the \"template_base_dir\" config parameter.")
 	fs.BoolVar(&c.version, clVersion, false, "Show version informations.")
 
+	fs.Var(&c.assetManager, clAssetManager,
+		fmt.Sprintf(`Asset manager for the templates files: %q or %q (default=%q)
+If present, overwrites the "asset_manager" config parameter.`,
+			types.AssetManagerNone,
+			types.AssetManagerEmbed,
+			defaultAssetManager))
+
 	return fs
+}
+
+func (c *cmdlineInfo) newFlagSetAndParse(args []string) (*flag.FlagSet, error) {
+	fs := c.newFlagSet()
+	err := fs.Parse(args)
+	if err != nil {
+		return nil, err
+	}
+	c.hasAssetManager = isFlagPassed(clAssetManager, fs)
+	return fs, nil
+}
+
+// isFlagPassed checks if flag was provided
+func isFlagPassed(name string, fs *flag.FlagSet) bool {
+	found := false
+	fs.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
 }
 
 // parseConfig returns the configuration from command line parameters,
@@ -132,6 +165,7 @@ func parseConfig(args *cmdlineInfo) (*config, error) {
 	if args.output != defaultOutputFile || cfg.OutputFile == "" {
 		cfg.OutputFile = args.output
 	}
+
 	if args.debug {
 		cfg.NoGoFormat = true
 		cfg.NoCache = true
@@ -194,6 +228,10 @@ Inh2 = {template="inh2"}
 	if err != nil {
 		return err
 	}
+	if args.hasAssetManager {
+		cfg.AssetManager = args.assetManager
+	}
+
 	ctx := cfg.Context
 	return writeOutput(args.output, ctx.WriteConfig)
 }
@@ -212,8 +250,11 @@ func Run() int {
 
 	var clinfo cmdlineInfo
 
-	fs := clinfo.newFlagSet()
-	fs.Parse(os.Args[1:])
+	fs, err := clinfo.newFlagSetAndParse(os.Args[1:])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		return 2
+	}
 
 	if clinfo.help {
 		cmdHelp(os.Stdout, fs)

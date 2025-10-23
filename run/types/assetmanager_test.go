@@ -1,6 +1,7 @@
 package types
 
 import (
+	"flag"
 	"fmt"
 	"testing"
 
@@ -149,6 +150,54 @@ func TestMarshal(t *testing.T) {
 				t.Errorf("Marshal(%s) expected error not raised", tc.input.String())
 			}
 
+		}
+	}
+}
+
+func Test_Var(t *testing.T) {
+	var testCases = []struct {
+		input    string
+		expected AssetManager
+		ok       bool
+	}{
+		{"NO_DECL", AssetManagerNone, true},
+		{"", AssetManagerNone, true},
+		{"None", AssetManagerNone, true},
+		{"NONE", AssetManagerNone, true},
+		{"Go-Bindata", AssetManagerGoBindata, true},
+		{"Bindata", AssetManagerGoBindata, true},
+		{"Rice", AssetManagerGoRice, true},
+		{"Go.Rice", AssetManagerGoRice, true},
+		{"Ri.ce", AssetManagerGoRice, false},
+		{"Embed", AssetManagerEmbed, true},
+		{"go:EMBED", AssetManagerEmbed, true},
+		{"go_embed", AssetManagerEmbed, false},
+	}
+
+	for _, tc := range testCases {
+
+		var args []string
+		var am AssetManager
+
+		if tc.input != "NO_DECL" {
+			args = []string{"-asset-manager", tc.input}
+		}
+
+		fs := flag.NewFlagSet("ExampleValue", flag.ContinueOnError)
+		fs.Var(&am, "asset-manager", "Asset manager")
+		err := fs.Parse(args)
+
+		if tc.ok {
+			if err != nil {
+				t.Errorf("Unexpected error for input %q: %s", tc.input, err.Error())
+			} else if am != tc.expected {
+				t.Errorf("Input %q: expected %q, found %q", tc.input, tc.expected, am)
+			}
+
+		} else {
+			if err == nil {
+				t.Errorf("Expected error for input %q: found %[2]d (%[2]s)", tc.input, am)
+			}
 		}
 	}
 }
