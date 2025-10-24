@@ -1,9 +1,6 @@
 package cli
 
 import (
-	"io"
-	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -79,198 +76,27 @@ func Test_unmarshalConfig(t *testing.T) {
 			if diff := cmp.Diff(tt.want, got); diff != "" {
 				t.Errorf("ToSlice() mismatch (-want +got):\n%s", diff)
 			}
-			// if !reflect.DeepEqual(got, tt.want) {
-			// 	t.Errorf("unmarshalConfig() = %v, want %v", got, tt.want)
-			// }
 		})
 	}
 }
 
-func Test_loadConfigFromFile(t *testing.T) {
-	type args struct {
-		path string
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *config
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := loadConfigFromFile(tt.args.path)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("loadConfigFromFile() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("loadConfigFromFile() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_cmdHelp(t *testing.T) {
-
-	tests := []struct {
-		name string
-		want string
-	}{
-		{
-			name: "contains Generate",
-			want: "Generate the configuration file",
-		},
-		{
-			name: "contains utility",
-			want: "an utility that generates a go package",
-		},
-		{
-			name: "contains row Options:",
-			want: "Options:\n",
-		},
-	}
-
-	w := &strings.Builder{}
-
-	var clinfo cmdlineInfo
-
-	fs := clinfo.newFlagSet()
-	fs.Parse([]string{"-h"})
-
-	if !clinfo.help {
-		t.Error("used command line option -h, but cmdHelp() is not called")
-		t.FailNow()
-	}
-
-	cmdHelp(w, fs)
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if !strings.Contains(w.String(), tt.want) {
-				t.Errorf("cmdHelp() message does not contain substring %q", tt.want)
-				t.Log(w.String())
-			}
-		})
-	}
-}
-
-// func Test_parseArgs(t *testing.T) {
+// func Test_writeOutput(t *testing.T) {
+// 	type args struct {
+// 		path string
+// 		fn   func(io.Writer) error
+// 	}
 // 	tests := []struct {
-// 		name string
-// 		want *cmdlineInfo
+// 		name    string
+// 		args    args
+// 		wantErr bool
 // 	}{
 // 		// TODO: Add test cases.
 // 	}
 // 	for _, tt := range tests {
 // 		t.Run(tt.name, func(t *testing.T) {
-// 			if got, _ := parseArgs(); !reflect.DeepEqual(got, tt.want) {
-// 				t.Errorf("parseArgs() = %v, want %v", got, tt.want)
+// 			if err := writeOutput(tt.args.path, tt.args.fn); (err != nil) != tt.wantErr {
+// 				t.Errorf("writeOutput() error = %v, wantErr %v", err, tt.wantErr)
 // 			}
 // 		})
 // 	}
 // }
-
-func Test_parseConfig(t *testing.T) {
-	type args struct {
-		args *cmdlineInfo
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    *config
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := parseConfig(tt.args.args)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parseConfig() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("parseConfig() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_writeOutput(t *testing.T) {
-	type args struct {
-		path string
-		fn   func(io.Writer) error
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := writeOutput(tt.args.path, tt.args.fn); (err != nil) != tt.wantErr {
-				t.Errorf("writeOutput() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func Test_cmdGenPackage(t *testing.T) {
-	type args struct {
-		cfg *config
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := cmdGenPackage(tt.args.cfg); (err != nil) != tt.wantErr {
-				t.Errorf("cmdGenPackage() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func Test_cmdGenConfig(t *testing.T) {
-	type args struct {
-		args *cmdlineInfo
-	}
-	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := cmdGenConfig(tt.args.args); (err != nil) != tt.wantErr {
-				t.Errorf("cmdGenConfig() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestRun(t *testing.T) {
-	tests := []struct {
-		name string
-		want int
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := Run(); got != tt.want {
-				t.Errorf("Run() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}

@@ -31,21 +31,27 @@ to render the page all you have to do is:
   err := PageName.Execute(w, data)
 
 Options:
-  -asset-manager value
-    	Asset manager for the templates files: "none" or "embed" (default="none")
-    	If present, overwrites the "asset_manager" config parameter.
-  -c string
-    	Configuration file used to generate the package. (default "gentmpl.conf")
-  -d	Debug mode. Overwrite configuration setting:
-    	do not cache templates, do not use asset manager and do not format generated code.
-  -g	Generate the configuration file instead of the package.
-  -h	Show command usage information.
-  -o string
-    	Optional output file for package/config file. If empty stdout will be used.
-  -p string
-    	Optional common prefix of the templates files.
-    	If present, overwrites the "template_base_dir" config parameter.
 
+  -b string
+        Base directory of the templates files.
+        If present, overwrites the "template_base_dir" config parameter.
+  -c string
+        Configuration file used to generate the package. (default "gentmpl.conf")
+  -d    Debug mode. Overwrite configuration setting:
+        do not cache templates, do not use asset manager and do not format generated code.
+  -g    Generate the configuration file instead of the package.
+  -h    Show command usage information.
+  -o string
+        Optional output file for package/config file. If empty stdout will be used.
+  -v    Show version informations.
+
+Examples:
+
+  Generate the templates package
+    gentmpl -c gentmpl.conf -o templates.go
+
+  Generate a demo configuration file
+    gentmpl -g -o gentmpl.conf
 ```
 
 ### Description
