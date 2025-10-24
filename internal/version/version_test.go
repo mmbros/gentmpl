@@ -1,4 +1,4 @@
-package cli
+package version
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func Test_cmdVersion(t *testing.T) {
+func Test_PrintVersion(t *testing.T) {
 	type args struct {
 		appname string
 	}
@@ -24,7 +24,7 @@ func Test_cmdVersion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
-			cmdVersion(w, tt.args.appname)
+			PrintVersion(w, tt.args.appname)
 			if gotW := w.String(); !strings.Contains(gotW, tt.wantW) {
 				t.Errorf("cmdVersion() = %v, do not contain want %v", gotW, tt.wantW)
 			}

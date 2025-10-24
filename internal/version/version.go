@@ -1,4 +1,4 @@
-package cli
+package version
 
 import (
 	"fmt"
@@ -16,7 +16,7 @@ var (
 	OsArch     string // uname -s -m
 )
 
-func cmdVersion(w io.Writer, appname string) {
+func PrintVersion(w io.Writer, appname string) {
 	fmt.Fprintf(w, `%s
 app version: %s
 golang version: %s

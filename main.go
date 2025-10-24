@@ -26,5 +26,5 @@ import (
 )
 
 func main() {
-	os.Exit(cli.Run())
+	os.Exit(cli.Run("gentmpl"))
 }
