@@ -67,9 +67,9 @@ func (a *Args) Parse(arguments []string) error {
 }
 
 // IsFlagPassed checks if flag was provided
-func (c *Args) isFlagPassed(name string) bool {
+func (a *Args) isFlagPassed(name string) bool {
 	found := false
-	c.fs.Visit(func(f *flag.Flag) {
+	a.fs.Visit(func(f *flag.Flag) {
 		if f.Name == name {
 			found = true
 		}
