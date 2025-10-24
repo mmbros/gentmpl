@@ -1,13 +1,13 @@
 # Change these variables as necessary.
 main_package_path = ./
 binary_name = gentmpl
-binary_fullpath = /tmp/bin/${binary_name}
+binary_fullpath = ${binary_name}
 
 # ==================================================================================== #
 # Build Version Information
 # ==================================================================================== #
 
-build build-prod: verinfopath = github.com/mmbros/gentmpl/cli
+build build-prod: verinfopath = github.com/mmbros/gentmpl/internal/version
 build build-prod: GO_VERSION := $(shell go version)
 build build-prod: GIT_COMMIT := $(shell git rev-parse --short HEAD)
 build build-prod: BUILD_TIME := $(shell date '+%F %T %z')

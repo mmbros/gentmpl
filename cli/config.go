@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/mmbros/gentmpl/internal/version"
 	"github.com/mmbros/gentmpl/run"
 	"github.com/mmbros/gentmpl/run/types"
 	"github.com/pelletier/go-toml/v2"
@@ -262,7 +263,7 @@ func Run() int {
 	}
 
 	if clinfo.version {
-		cmdVersion(os.Stdout, appName)
+		version.Print(os.Stdout, appName)
 		return 0
 	}
 
