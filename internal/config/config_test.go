@@ -1,4 +1,4 @@
-package cli
+package config
 
 import (
 	"testing"
@@ -23,9 +23,9 @@ Inh2 = {template="inh2"}
 `
 )
 
-func Test_unmarshalConfig(t *testing.T) {
+func Test_Unmarshal(t *testing.T) {
 
-	cfg := &config{}
+	cfg := &Config{}
 	cfg.TemplateBaseDir = "tmpl/"
 	cfg.Templates = map[string][]string{
 		"flat":    {"flat/footer.tmpl", "flat/header.tmpl", "flat/page1.tmpl", "flat/page2and3.tmpl"},
@@ -50,7 +50,7 @@ func Test_unmarshalConfig(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *config
+		want    *Config
 		wantErr bool
 	}{
 		{
@@ -67,7 +67,7 @@ func Test_unmarshalConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := unmarshalConfig(tt.args.data)
+			got, err := Unmarshal(tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("unmarshalConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
