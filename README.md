@@ -5,6 +5,7 @@ render html or text templates.
 
 [![GoDoc](https://godoc.org/github.com/mmbros/gentmpl?status.svg)](https://godoc.org/github.com/mmbros/gentmpl)
 [![Go Report Card](https://goreportcard.com/badge/github.com/mmbros/gentmpl)](https://goreportcard.com/report/github.com/mmbros/gentmpl)
+[![Go](https://github.com/mmbros/gentmpl/actions/workflows/go.yml/badge.svg)](https://github.com/mmbros/gentmpl/actions/workflows/go.yml)
 
 ## Installation
 
