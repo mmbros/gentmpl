@@ -1,3 +1,4 @@
+// config package implements the methods to load the configuration of the tool.
 package config
 
 import (
@@ -15,6 +16,7 @@ type Config struct {
 	OutputFile string
 }
 
+// Unmarshal creates a new Config from an array of bytes.
 func Unmarshal(data []byte) (*Config, error) {
 	// parse config file
 	var cfg Config
@@ -24,7 +26,7 @@ func Unmarshal(data []byte) (*Config, error) {
 	return &cfg, nil
 }
 
-// FromFile returns the configuration from a configuration file
+// FromFile creates a new Config loading the specified configuration file.
 func FromFile(path string) (*Config, error) {
 	// open config file
 	f, err := os.Open(path)
@@ -40,8 +42,10 @@ func FromFile(path string) (*Config, error) {
 	return Unmarshal(buf)
 }
 
-// Parse returns the configuration from command line parameters,
-// config parameters and defaults
+// Parse create a new Config from
+//  1. command line parameters
+//  2. configuration file
+//  3. default values
 func Parse(args *cmdline.Args) (*Config, error) {
 
 	// init config from the config file

@@ -1,3 +1,4 @@
+// cli package contains the main entry function of the application.
 package cli
 
 import (
@@ -11,13 +12,11 @@ import (
 	"github.com/mmbros/gentmpl/internal/version"
 )
 
-// Run parses the command line arguments of the gentmpl tool.
-//
-// Based on the arguments passed it executes
-// - PrintHelp
-// - PrintVersion
-// - CreateConfig
-// - CreatePackage
+// Run parses the command line arguments and executes the corrisponding command:
+//   - PrintHelp: print usage information
+//   - PrintVersion: print version information
+//   - CreateConfig: generate the package based on the provided configuration parameters
+//   - CreatePackage: generate the template package
 //
 // It returns the code that should be used for os.Exit.
 func Run(appName string) int {

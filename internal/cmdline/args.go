@@ -1,3 +1,4 @@
+// cmdline package implements the command line parameters passed to the application.
 package cmdline
 
 import (
@@ -5,8 +6,6 @@ import (
 )
 
 const (
-	// appName = "gentmpl"
-
 	// name of the command line parameters
 	clBaseDir   = "b"
 	clConfig    = "c"
@@ -15,14 +14,12 @@ const (
 	clHelp      = "h"
 	clOutput    = "o"
 	clVersion   = "v"
-	// clAssetManager = "asset-manager"
 
 	// default values
-	// defaultConfigFile   = appName + ".conf"
 	defaultOutputFile = "" // if empty use StdOut
-	// defaultAssetManager = types.AssetManagerNone
 )
 
+// Args struct is used to manage the command line parameters.
 type Args struct {
 	baseDir   string
 	config    string
@@ -31,7 +28,6 @@ type Args struct {
 	help      bool
 	output    string
 	version   bool
-	// assetManager types.AssetManager
 
 	appName string
 	fs      *flag.FlagSet
@@ -39,6 +35,7 @@ type Args struct {
 
 func defaultConfigFile(appName string) string { return appName + ".conf" }
 
+// NewArgs creates a new Args struct.
 func NewArgs(appName string, errorHandling flag.ErrorHandling) *Args {
 	fs := flag.NewFlagSet(appName, errorHandling)
 
@@ -62,11 +59,13 @@ func NewArgs(appName string, errorHandling flag.ErrorHandling) *Args {
 	return &a
 }
 
+// Parse parses flag definitions from the argument list, which should not
+// include the command name.
 func (a *Args) Parse(arguments []string) error {
 	return a.fs.Parse(arguments)
 }
 
-// IsFlagPassed checks if flag was provided
+// isFlagPassed checks if flag was provided.
 func (a *Args) isFlagPassed(name string) bool {
 	found := false
 	a.fs.Visit(func(f *flag.Flag) {
@@ -77,13 +76,32 @@ func (a *Args) isFlagPassed(name string) bool {
 	return found
 }
 
-func (a *Args) Debug() bool             { return a.debug }
-func (a *Args) GenConfig() bool         { return a.genConfig }
-func (a *Args) Help() bool              { return a.help }
-func (a *Args) Version() bool           { return a.version }
-func (a *Args) Config() string          { return a.config }
-func (a *Args) OutputFile() string      { return a.output }
+// public methods of the Args struct.
+
+// Debug returns true if debug flag was setted.
+func (a *Args) Debug() bool { return a.debug }
+
+// GenConfig returns true if gen-config flag was setted.
+func (a *Args) GenConfig() bool { return a.genConfig }
+
+// Help returns true if help flag was setted.
+func (a *Args) Help() bool { return a.help }
+
+// Version returns true if version flag was setted.
+func (a *Args) Version() bool { return a.version }
+
+// Config returns the path of the configuration file.
+// If the config flag was not specified, the default <appname>.conf is used.
+func (a *Args) Config() string { return a.config }
+
+// OutputFile returns the path of the output file.
+func (a *Args) OutputFile() string { return a.output }
+
+// TemplateBaseDir returns the value of the base directory of the templates passed in the command line.
 func (a *Args) TemplateBaseDir() string { return a.baseDir }
 
-func (a *Args) IsPassedOutputFile() bool      { return a.isFlagPassed(clOutput) }
+// IsPassedOutputFile returns true if the Output command line option was passed.
+func (a *Args) IsPassedOutputFile() bool { return a.isFlagPassed(clOutput) }
+
+// IsPassedTemplateBaseDir returns true if the TemplateBaseDir command line option was passed.
 func (a *Args) IsPassedTemplateBaseDir() bool { return a.isFlagPassed(clBaseDir) }

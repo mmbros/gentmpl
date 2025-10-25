@@ -86,6 +86,10 @@ Generate a demo configuration file:
 gentmpl -g -o demo.conf
 ```
 
+Generate a demo configuration file:
+```
+gentmpl -g -o demo.conf
+```
 ## Configuration file
 
 gentmpl reads from a TOML configuration file the parameters used to generate
@@ -132,7 +136,7 @@ Pag3 = {template="flat", base="page-3"}
 ### Optional configuration parameters
 
 - `asset_manager`: string. Asset manager to use. Possible values: "none"
-  (default) |  "go-bindata".
+  (default) |  "embed".
 
 - `func_map`: string (default ""). Name of the template.FuncMap variable used
   in template creation. The variable must be defined in another file of the
@@ -194,11 +198,4 @@ The following methods are defined on the `PageEnum` type:
   - `Template() template.Template`: returns the template
   - `Files() []string`: returns the files used by the page's template
 
-## Development notes
-
-The project layout follows [Writing Go Applications with Reusable Logic](https://npf.io/2016/10/reusable-commands/).
-
-See also:
-
-- [Gorram](https://github.com/natefinch/gorram)
 

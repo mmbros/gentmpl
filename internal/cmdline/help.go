@@ -5,6 +5,7 @@ import (
 	"io"
 )
 
+// PrintHelp prints usage information about the application.
 func (a *Args) PrintHelp(w io.Writer) {
 
 	a.fs.SetOutput(w)
