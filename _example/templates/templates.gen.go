@@ -41,7 +41,7 @@ const templatesLen = 3
 
 // Templates type
 type Templates struct {
-	templates [templatesLen]*template.Template
+	cached [templatesLen]*template.Template
 }
 
 func file2path(file string) string {
@@ -95,13 +95,15 @@ func (page PageEnum) Files() []string {
 	return t.Files()
 }
 
+// New creates a new Templates object
+// using the passed FuncMap to initialize the templates
 func New(funcMap template.FuncMap) *Templates {
 	var ts Templates
 
 	// init base templates
 	for t := range templateEnum(templatesLen) {
 		files := t.Files()
-		ts.templates[t] = template.Must(template.New(filepath.Base(files[0])).Funcs(funcMap).ParseFS(embeddedFS, files2paths(files)...))
+		ts.cached[t] = template.Must(template.New(filepath.Base(files[0])).Funcs(funcMap).ParseFS(embeddedFS, files2paths(files)...))
 	}
 	return &ts
 }
@@ -109,7 +111,7 @@ func New(funcMap template.FuncMap) *Templates {
 // Template returns the template.Template of the page
 func (t *Templates) Template(page PageEnum) *template.Template {
 	var idx = [...]templateEnum{1, 2, 0, 0, 0}
-	return t.templates[idx[page]]
+	return t.cached[idx[page]]
 }
 
 // Base returns the template name of the page

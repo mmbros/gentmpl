@@ -53,12 +53,6 @@ type Context struct {
 	// Use text/template instead of html/template.
 	TextTemplate bool `toml:"text_template"`
 
-	// Name of the template.FuncMap variable used in template creation.
-	// The variable must be defined in another file of the same package
-	// (ex: "templates/func-map.go").
-	// If empty, no funcMap will be used.
-	FuncMap string `toml:"func_map"`
-
 	// Name of the PageEnum type definition.
 	PageEnumType string `toml:"page_enum_type"`
 
@@ -209,7 +203,6 @@ func (ctx *Context) checkAndPrepare() (*dataType, error) {
 		PackageName:      nvl(ctx.PackageName, defaultPackageName),
 		TemplateEnumType: nvl(ctx.TemplateEnumType, defaultTemplateEnumType),
 		PageEnumType:     nvl(ctx.PageEnumType, defaultPageEnumType),
-		FuncMap:          ctx.FuncMap,
 		TemplateBaseDir:  ctx.TemplateBaseDir,
 		TextTemplate:     ctx.TextTemplate,
 

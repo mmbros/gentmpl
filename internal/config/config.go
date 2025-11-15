@@ -42,6 +42,40 @@ func FromFile(path string) (*Config, error) {
 	return Unmarshal(buf)
 }
 
+// FromArgs updates config settings with command line parameters and set defaults
+func (cfg *Config) FromArgs(args *cmdline.Args) {
+
+	if args.IsPassedOutputFile() {
+		cfg.OutputFile = args.OutputFile()
+	}
+
+	if args.IsPassedTemplateBaseDir() {
+		cfg.TemplateBaseDir = args.TemplateBaseDir()
+	}
+
+	if args.IsPassedAssetManager() {
+		cfg.AssetManager = args.AssetManager()
+	}
+
+	if args.IsPassedNoGoFormat() {
+		cfg.NoGoFormat = args.NoGoFormat()
+	}
+
+	// cache cannot be disabled if asset manager is used
+
+	if args.IsPassedNoCache() {
+		cfg.NoCache = args.NoCache()
+	}
+	if cfg.AssetManager != types.AssetManagerNone {
+		cfg.NoCache = false
+	}
+
+	if args.IsPassedPkgName() {
+		cfg.PackageName = args.PkgName()
+	}
+
+}
+
 // Parse create a new Config from
 //  1. command line parameters
 //  2. configuration file
@@ -54,19 +88,8 @@ func Parse(args *cmdline.Args) (*Config, error) {
 		return nil, err
 	}
 
-	// update config settings with command line parameters and set defaults
-	if args.IsPassedOutputFile() {
-		cfg.OutputFile = args.OutputFile()
-	}
-
-	if args.IsPassedTemplateBaseDir() {
-		cfg.TemplateBaseDir = args.TemplateBaseDir()
-	}
-
-	// cache cannot be disabled if asset manager is used
-	if cfg.AssetManager != types.AssetManagerNone {
-		cfg.NoCache = false
-	}
+	// updates configuration with command line flags
+	cfg.FromArgs(args)
 
 	return cfg, nil
 }
