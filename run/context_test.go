@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jteeuwen/go-bindata"
 	"github.com/mmbros/gentmpl/run/types"
 )
 
@@ -229,27 +228,27 @@ func writeTemplates(ctx *Context, dir string) error {
 	return err
 }
 
-// writeBindata create a go-bindata file based on the Context
-func writeBindata(ctx *Context, dir string) error {
-	if !ctx.AssetManager.IsGoBindata() {
-		return nil
-	}
-	path := filepath.Join(dir, "bindata.go")
-	prefix := filepath.Clean(filepath.Join(dir, "..", templateBaseDir))
+// // writeBindata create a go-bindata file based on the Context
+// func writeBindata(ctx *Context, dir string) error {
+// 	if !ctx.AssetManager.IsGoBindata() {
+// 		return nil
+// 	}
+// 	path := filepath.Join(dir, "bindata.go")
+// 	prefix := filepath.Clean(filepath.Join(dir, "..", templateBaseDir))
 
-	c := bindata.NewConfig()
-	c.Debug = ctx.NoCache
-	c.Output = path
-	c.Prefix = prefix
-	c.Package = ctx.PackageName
-	c.Input = []bindata.InputConfig{
-		{
-			Path:      prefix,
-			Recursive: true,
-		},
-	}
-	return bindata.Translate(c)
-}
+// 	c := bindata.NewConfig()
+// 	c.Debug = ctx.NoCache
+// 	c.Output = path
+// 	c.Prefix = prefix
+// 	c.Package = ctx.PackageName
+// 	c.Input = []bindata.InputConfig{
+// 		{
+// 			Path:      prefix,
+// 			Recursive: true,
+// 		},
+// 	}
+// 	return bindata.Translate(c)
+// }
 
 // create a FuncMap file
 func writeFuncmap(ctx *Context, dir string) error {
@@ -284,11 +283,11 @@ import (
 )
 
 func main(){
-	InitTemplates()
+	t := New(nil)
 	var page PageEnum = PageInh1
-	wr := os.Stdout
+	w := os.Stdout
 
-	if err := page.Execute(wr, nil); err != nil {
+	if err := t.Execute(w, page, nil); err != nil {
 		fmt.Print(err)
 	}
 }
@@ -336,9 +335,9 @@ func subtestRun(ctx *Context, folder, root string, t *testing.T) {
 		"tmpl":      writeTmplFolder,
 		"templates": writeTemplates,
 		"funcmap":   writeFuncmap,
-		"bindata":   writeBindata,
-		"main":      writeMain,
-		"go.mod":    writeMod,
+		// "bindata":   writeBindata,
+		"main":   writeMain,
+		"go.mod": writeMod,
 	}
 	var numerr int
 	dir := filepath.Join(root, folder)
@@ -512,6 +511,7 @@ func TestRunAll(t *testing.T) {
 		Pages:           pages,
 		Templates:       templates,
 		TemplateBaseDir: templateBaseDir,
+		// NoGoFormat:      true,
 	}
 
 	// loops over context parameters

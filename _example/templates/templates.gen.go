@@ -17,7 +17,7 @@ import (
 //go:embed "tmpl/inheritance/base.tmpl"
 //go:embed "tmpl/inheritance/content1.tmpl"
 //go:embed "tmpl/inheritance/content2.tmpl"
-var content embed.FS
+var embeddedFS embed.FS
 
 // type definitions
 type (
@@ -39,8 +39,10 @@ const (
 // number of templates
 const templatesLen = 3
 
-// module variables
-var mTemplates [templatesLen]*template.Template
+// Templates type
+type Templates struct {
+	templates [templatesLen]*template.Template
+}
 
 func file2path(file string) string {
 	const templatesFolder = "tmpl"
@@ -93,18 +95,21 @@ func (page PageEnum) Files() []string {
 	return t.Files()
 }
 
-func InitTemplates() {
+func New(funcMap template.FuncMap) *Templates {
+	var ts Templates
+
 	// init base templates
-	for t := templateEnum(0); t < templatesLen; t++ {
+	for t := range templateEnum(templatesLen) {
 		files := t.Files()
-		mTemplates[t] = template.Must(template.New(filepath.Base(files[0])).Funcs(funcMap).ParseFS(content, files2paths(files)...))
+		ts.templates[t] = template.Must(template.New(filepath.Base(files[0])).Funcs(funcMap).ParseFS(embeddedFS, files2paths(files)...))
 	}
+	return &ts
 }
 
 // Template returns the template.Template of the page
-func (page PageEnum) Template() *template.Template {
+func (t *Templates) Template(page PageEnum) *template.Template {
 	var idx = [...]templateEnum{1, 2, 0, 0, 0}
-	return mTemplates[idx[page]]
+	return t.templates[idx[page]]
 }
 
 // Base returns the template name of the page
@@ -121,8 +126,8 @@ func (page PageEnum) Base() string {
 // If an error occurs executing the template or writing its output, execution
 // stops, but partial results may already have been written to the output writer.
 // A template may be executed safely in parallel.
-func (page PageEnum) Execute(wr io.Writer, data interface{}) error {
-	tmpl := page.Template()
+func (t *Templates) Execute(wr io.Writer, page PageEnum, data interface{}) error {
+	tmpl := t.Template(page)
 	name := page.Base()
 	if name != "" {
 		return tmpl.ExecuteTemplate(wr, name, data)
@@ -132,11 +137,11 @@ func (page PageEnum) Execute(wr io.Writer, data interface{}) error {
 
 /*
 func main(){
-	InitTemplates()
-	var page = PageInh1
-	wr := os.Stdout
+	templates := New(nil)
+	var page = PageHello
+	w := os.Stdout
 
-	if err := page.Execute(wr, nil); err != nil {
+	if err := templates.Execute(page, w, nil); err != nil {
 		fmt.Print(err)
 	}
 }

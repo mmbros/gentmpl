@@ -8,11 +8,11 @@ import (
 )
 
 func main() {
-	templates.InitTemplates()
-	var page = templates.PageInh1
-	wr := os.Stdout
+	tmpls := templates.New(nil)
+	var page = templates.PagePag1
+	w := os.Stdout
 
-	if err := page.Execute(wr, nil); err != nil {
+	if err := tmpls.Execute(w, page, nil); err != nil {
 		fmt.Print(err)
 	}
 }

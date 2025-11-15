@@ -16,17 +16,15 @@ func TestPageExecute(t *testing.T) {
 		{PageInh2},
 	}
 
-	InitTemplates()
+	templates := New(nil)
 
-	wr := new(bytes.Buffer)
+	w := new(bytes.Buffer)
 
 	for _, tc := range testCases {
-		if err := tc.page.Execute(wr, nil); err != nil {
-			t.Errorf("page.Execute: %s", err)
+		if err := templates.Execute(w, tc.page, nil); err != nil {
+			t.Errorf("Execute: %s", err)
 		}
-
 	}
-
 }
 
 func Test_file2path(t *testing.T) {
