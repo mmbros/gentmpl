@@ -16,8 +16,7 @@ func TestString(t *testing.T) {
 	}{
 
 		{AssetManagerNone, "none"},
-		{AssetManagerGoBindata, "go-bindata"},
-		{AssetManagerGoRice, "go.rice"},
+		{AssetManagerEmbed, "embed"},
 		{100, "AssetManager(100)"},
 	}
 
@@ -40,11 +39,10 @@ func TestParse(t *testing.T) {
 		{"", AssetManagerNone, true},
 		{"None", AssetManagerNone, true},
 		{"NONE", AssetManagerNone, true},
-		{"Go-Bindata", AssetManagerGoBindata, true},
-		{"Bindata", AssetManagerGoBindata, true},
-		{"Go.Rice", AssetManagerGoRice, true},
-		{"Rice", AssetManagerGoRice, true},
-		{"Ri.ce", AssetManagerGoRice, false},
+		{"embed", AssetManagerEmbed, true},
+		{"go:embed", AssetManagerEmbed, true},
+		{"go-embed", AssetManagerEmbed, true},
+		{"em bed", AssetManagerEmbed, false},
 	}
 	for _, tc := range testCases {
 		actual, err := ParseAssetManager(tc.input)
@@ -74,11 +72,6 @@ func TestUnmarshal(t *testing.T) {
 		{"", AssetManagerNone, true},
 		{"None", AssetManagerNone, true},
 		{"NONE", AssetManagerNone, true},
-		{"Go-Bindata", AssetManagerGoBindata, true},
-		{"Bindata", AssetManagerGoBindata, true},
-		{"Go.Rice", AssetManagerGoRice, true},
-		{"Rice", AssetManagerGoRice, true},
-		{"Ri.ce", AssetManagerGoRice, false},
 		{"Embed", AssetManagerEmbed, true},
 		{"go:EMBED", AssetManagerEmbed, true},
 		{"go_embed", AssetManagerEmbed, false},
@@ -119,8 +112,6 @@ func TestMarshal(t *testing.T) {
 		ok       bool
 	}{
 		{AssetManagerNone, "none", true},
-		{AssetManagerGoBindata, "go-bindata", true},
-		{AssetManagerGoRice, "go.rice", true},
 		{AssetManager(100), "", false},
 		{AssetManagerNone, "none", true},
 		{AssetManagerEmbed, "embed", true},
@@ -164,11 +155,6 @@ func Test_Var(t *testing.T) {
 		{"", AssetManagerNone, true},
 		{"None", AssetManagerNone, true},
 		{"NONE", AssetManagerNone, true},
-		{"Go-Bindata", AssetManagerGoBindata, true},
-		{"Bindata", AssetManagerGoBindata, true},
-		{"Rice", AssetManagerGoRice, true},
-		{"Go.Rice", AssetManagerGoRice, true},
-		{"Ri.ce", AssetManagerGoRice, false},
 		{"Embed", AssetManagerEmbed, true},
 		{"go:EMBED", AssetManagerEmbed, true},
 		{"go_embed", AssetManagerEmbed, false},

@@ -11,23 +11,15 @@ type AssetManager uint8
 
 // AssetManager possible values
 const (
-	AssetManagerNone      AssetManager = iota
-	AssetManagerGoBindata              // unsupported
-	AssetManagerGoRice                 // unsupported
+	AssetManagerNone AssetManager = iota
 	AssetManagerEmbed
 )
 
 // string representation of AssetManager
-var reprAssetManager = [...]string{"none", "go-bindata", "go.rice", "embed"}
+var reprAssetManager = [...]string{"none", "embed"}
 
 // IsNone returns true if AssetManager is None
 func (am AssetManager) IsNone() bool { return am == AssetManagerNone }
-
-// IsGoBindata returns true if AssetManager is GoBindata
-func (am AssetManager) IsGoBindata() bool { return am == AssetManagerGoBindata }
-
-// IsGoRice returns true if AssetManager is GoRice
-func (am AssetManager) IsGoRice() bool { return am == AssetManagerGoRice }
 
 // IsEmbed returns true if AssetManager is Embed
 func (am AssetManager) IsEmbed() bool { return am == AssetManagerEmbed }
@@ -37,10 +29,6 @@ func ParseAssetManager(s string) (AssetManager, error) {
 	switch strings.ToLower(s) {
 	case "go-embed", "go:embed", "embed":
 		return AssetManagerEmbed, nil
-	case "go-bindata", "bindata":
-		return AssetManagerGoBindata, nil
-	case "go.rice", "rice":
-		return AssetManagerGoRice, nil
 	case "none", "":
 		return AssetManagerNone, nil
 	}

@@ -171,11 +171,7 @@ func TestWritePackage(t *testing.T) {
 		t.Errorf("Expected %s not found", find)
 	}
 
-	if ctx.AssetManager.IsGoBindata() {
-		find = "MustAsset"
-	} else {
-		find = "files2paths"
-	}
+	find = "files2paths"
 	if !strings.Contains(buf.String(), find) {
 		t.Errorf("Expected %s not found", find)
 	}
