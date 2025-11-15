@@ -340,7 +340,7 @@ func InitTemplates(){}
 {{ define "func-init-templates" }}
 func InitTemplates(){
 	// init base templates
-	for t := {{ .TemplateEnumType }}(0); t<templatesLen; t++ {
+	for t := range {{ .TemplateEnumType }}(templatesLen) {
 		files := t.Files()
 {{- if .AssetManager.IsGoBindata -}}
 {{/*-
