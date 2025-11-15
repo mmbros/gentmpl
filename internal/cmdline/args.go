@@ -23,7 +23,6 @@ const (
 type Args struct {
 	baseDir   string
 	config    string
-	debug     bool
 	genConfig bool
 	help      bool
 	output    string
@@ -43,7 +42,6 @@ func NewArgs(appName string, errorHandling flag.ErrorHandling) *Args {
 
 	fs.StringVar(&a.config, clConfig, defaultConfigFile(appName), "Configuration file used to generate the package.")
 	fs.StringVar(&a.output, clOutput, defaultOutputFile, "Optional output file for package/config file. If empty stdout will be used.")
-	fs.BoolVar(&a.debug, clDebug, false, "Debug mode. Overwrite configuration setting:\ndo not cache templates, do not use asset manager and do not format generated code.")
 	fs.BoolVar(&a.help, clHelp, false, "Show command usage information.")
 	fs.BoolVar(&a.genConfig, clGenConfig, false, "Generate the configuration file instead of the package.")
 	fs.StringVar(&a.baseDir, clBaseDir, "", "Base directory of the templates files.\nIf present, overwrites the \"template_base_dir\" config parameter.")
@@ -77,9 +75,6 @@ func (a *Args) isFlagPassed(name string) bool {
 }
 
 // public methods of the Args struct.
-
-// Debug returns true if debug flag was setted.
-func (a *Args) Debug() bool { return a.debug }
 
 // GenConfig returns true if gen-config flag was setted.
 func (a *Args) GenConfig() bool { return a.genConfig }

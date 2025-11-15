@@ -63,12 +63,6 @@ func Parse(args *cmdline.Args) (*Config, error) {
 		cfg.TemplateBaseDir = args.TemplateBaseDir()
 	}
 
-	if args.Debug() {
-		cfg.NoGoFormat = true
-		cfg.NoCache = true
-		cfg.AssetManager = types.AssetManagerNone
-	}
-
 	// cache cannot be disabled if asset manager is used
 	if cfg.AssetManager != types.AssetManagerNone {
 		cfg.NoCache = false
