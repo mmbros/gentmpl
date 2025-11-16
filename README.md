@@ -25,31 +25,44 @@ gentmpl reads a configuration file with two mandatory sections:
   - templates: defines the templates used to render the pages
   - pages: defines the template and base names to render each page
 
-gentmpl generates a package that automatically handle the creation of the
+gentmpl generates a package that automatically handles the creation of the
 templates, loading and parsing the files specified in the configuration.
-Moreover for each page of name Name gentmpl defines a constant PageName so that
+For each page of name Name gentmpl defines a constant PageName so that
 to render the page all you have to do is:
-  err := PageName.Execute(w, data)
+    // initialize the templates
+    tmpls := New(funcMap)
+    // execute a named template
+    err := tmpls.Execute(w, PageName, data)
 
 Options:
 
+  -a value
+    	Asset manager for the templates files: "none" or "embed" (default="none")
+    	If present, overwrites the "asset_manager" config parameter.
   -b string
-        Base directory of the templates files.
-        If present, overwrites the "template_base_dir" config parameter.
+    	Base directory of the templates files.
+    	If present, overwrites the "template_base_dir" config parameter.
   -c string
-        Configuration file used to generate the package. (default "gentmpl.conf")
-  -d    Debug mode. Overwrite configuration setting:
-        do not cache templates, do not use asset manager and do not format generated code.
-  -g    Generate the configuration file instead of the package.
-  -h    Show command usage information.
+    	Configuration file used to generate the package. (default "gentmpl.conf")
+  -g	Generate the configuration file instead of the package.
+  -h	Show command usage information.
+  -n string
+    	Package name of the generated file.
+    	If present, overwrites the "package_name" config parameter. (default "templates")
+  -no-cache
+    	Do not cache templates. Ignored if asset manager is used.
+    	If present, overwrites the "no_cache" config parameter.
+  -no-go-format
+    	Do not format the generated code with go/format.
+    	If present, overwrites the "no_go_format" config parameter.
   -o string
-        Optional output file for package/config file. If empty stdout will be used.
-  -v    Show version informations.
+    	Optional output file for package/config file. If empty stdout will be used.
+  -v	Show version informations.
 
 Examples:
 
   Generate the templates package
-    gentmpl -c gentmpl.conf -o templates.go
+    gentmpl -o templates.gen.go
 
   Generate a demo configuration file
     gentmpl -g -o gentmpl.conf
@@ -59,10 +72,15 @@ Examples:
 
 gentmpl generates a package that automatically handle the creation of the
 templates, loading and parsing the files specified in the configuration.
-Moreover for each page of name _Name_ gentmpl defines a 
-constant `PageName` so that to render the page all you have to do is:
 
-    err := PageName.Execute(w, data)
+For each page of name _Name_ gentmpl defines a constant `PageName` so that
+to render the page all you have to do is:
+
+    // initialize the templates
+    tmpls := New(funcMap)
+    // execute a named template
+    err := tmpls.Execute(w, PageName, data)
+
 
 In case the `-g` option is given, gentmpl generates a demo configuration file,
 instead of the package.
@@ -71,25 +89,25 @@ In case the `-v` option is given, gentmpl print version information and exit.
 
 ### Examples:
 
-Generate the templates package (using the default configuration file):
+Generate the templates package using only the default configuration file:
 ```
-gentmpl -o templates.go
-```
-
-Generate the templates package with debug mode using an esplicit configuration
-file:
-```
-gentmpl -d -c tmpl.conf -o tmpl.go
+gentmpl -o templates.gen.go
 ```
 
-Generate a demo configuration file:
+Generate the templates package using the specified configuration file 
+and with the passed arguments override:
 ```
-gentmpl -g -o demo.conf
+gentmpl -o templates.gen.go -c mytemplates.conf -a none -b /tmp/tmpl -no-go-format -no-cache templates.gen.go
 ```
 
 Generate a demo configuration file:
 ```
 gentmpl -g -o demo.conf
+```
+
+Generate a demo configuration file with arguments override:
+```
+gentmpl -g -o demo.conf -n views -a embed
 ```
 ## Configuration file
 
@@ -139,11 +157,6 @@ Pag3 = {template="flat", base="page-3"}
 - `asset_manager`: string. Asset manager to use. Possible values: "none"
   (default) |  "embed".
 
-- `func_map`: string (default ""). Name of the template.FuncMap variable used
-  in template creation. The variable must be defined in another file of the
-  same package (ex: "templates/func-map.go"). If empty, no funcMap will be
-  used.
-
 - `no_cache`: bool (default false). Do not cache the templates. A new template
   will be created on every page.Execute.
 
@@ -167,13 +180,30 @@ Pag3 = {template="flat", base="page-3"}
 - `template_enum_type`: string (default "templateEnum"). Name of the
   TemplateEnum type definition.
 
-- `text_remplate`: bool (default false). Use text/template instead of
+- `text_template`: bool (default false). Use text/template instead of
   html/template.
 
 ## Generated Package
 
-The generated package exports an enum type `PageEnum` and a list of constant of
-the same type for each page to be rendered.
+The generated package exports two types: `Templates` and `PageEnum`
+
+
+### Templates
+
+The `Templates` type contains the cached templates.
+
+The following methods are defined on the `Templates` type:
+
+  - `New(funcMap template.FuncMap) *Templates`: creates a new Templates object using the passed FuncMap to initialize the templates.
+
+  - `Execute(wr io.Writer, page PageEnum, data interface{}) error`: execute the page's template to the
+    specified data object.
+  
+  - `Template(page PageEnum) *template.Template`: returns the template of the given page.
+
+### PageEnum
+
+The `PageEnum` type identifies each page to be rendered.
 
 Example:
 ```
@@ -183,7 +213,7 @@ PageEnum uint8
 // PageEnum constants
 const (
 	PageInh1 PageEnum = iota
-	PageInh2
+	PageInh2k
 	PagePag1
 	PagePag2
 	PagePag3
@@ -193,10 +223,6 @@ const (
 
 The following methods are defined on the `PageEnum` type:
 
-  - `Execute(io.Writer, interface{}) error`: execute the page's template to the
-    specified data object.
-  - `Base() string`: returns the base name used to render the page's template
-  - `Template() template.Template`: returns the template
   - `Files() []string`: returns the files used by the page's template
-
+  - `Base() string`: returns the base name used to render the page's template
 

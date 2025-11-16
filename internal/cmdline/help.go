@@ -19,11 +19,14 @@ text templates.
   - templates: defines the templates used to render the pages
   - pages: defines the template and base names to render each page
 
-%[1]s generates a package that automatically handle the creation of the
+%[1]s generates a package that automatically handles the creation of the
 templates, loading and parsing the files specified in the configuration.
-Moreover for each page of name Name %[1]s defines a constant PageName so that
+For each page of name Name %[1]s defines a constant PageName so that
 to render the page all you have to do is:
-  err := PageName.Execute(w, data)
+    // initialize the templates
+    tmpls := New(funcMap)
+    // execute a named template
+    err := tmpls.Execute(w, PageName, data)
 
 Options:
 
@@ -35,7 +38,7 @@ Options:
 Examples:
 
   Generate the templates package
-    %[1]s -c %[2]s -o templates.go
+    %[1]s -c %[2]s -o templates.gen.go
 
   Generate a demo configuration file
     %[1]s -g -o %[2]s

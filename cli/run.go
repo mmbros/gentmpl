@@ -118,6 +118,8 @@ Inh2 = {template="inh2"}
 		return err
 	}
 
+	cfg.FromArgs(args)
 	ctx := cfg.Context
+
 	return writeOutput(args.OutputFile(), ctx.WriteConfig)
 }

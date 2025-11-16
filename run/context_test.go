@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jteeuwen/go-bindata"
 	"github.com/mmbros/gentmpl/run/types"
 )
 
@@ -172,11 +171,7 @@ func TestWritePackage(t *testing.T) {
 		t.Errorf("Expected %s not found", find)
 	}
 
-	if ctx.AssetManager.IsGoBindata() {
-		find = "MustAsset"
-	} else {
-		find = "files2paths"
-	}
+	find = "files2paths"
 	if !strings.Contains(buf.String(), find) {
 		t.Errorf("Expected %s not found", find)
 	}
@@ -219,7 +214,7 @@ func writeTmplFolder(ctx *Context, dir string) error {
 
 // writeTemplates create the templates generated file
 func writeTemplates(ctx *Context, dir string) error {
-	path := filepath.Join(dir, "templates.go")
+	path := filepath.Join(dir, "templates.gen.go")
 
 	buf := new(bytes.Buffer)
 	err := ctx.WritePackage(buf)
@@ -229,46 +224,27 @@ func writeTemplates(ctx *Context, dir string) error {
 	return err
 }
 
-// writeBindata create a go-bindata file based on the Context
-func writeBindata(ctx *Context, dir string) error {
-	if !ctx.AssetManager.IsGoBindata() {
-		return nil
-	}
-	path := filepath.Join(dir, "bindata.go")
-	prefix := filepath.Clean(filepath.Join(dir, "..", templateBaseDir))
+// // writeBindata create a go-bindata file based on the Context
+// func writeBindata(ctx *Context, dir string) error {
+// 	if !ctx.AssetManager.IsGoBindata() {
+// 		return nil
+// 	}
+// 	path := filepath.Join(dir, "bindata.go")
+// 	prefix := filepath.Clean(filepath.Join(dir, "..", templateBaseDir))
 
-	c := bindata.NewConfig()
-	c.Debug = ctx.NoCache
-	c.Output = path
-	c.Prefix = prefix
-	c.Package = ctx.PackageName
-	c.Input = []bindata.InputConfig{
-		{
-			Path:      prefix,
-			Recursive: true,
-		},
-	}
-	return bindata.Translate(c)
-}
-
-// create a FuncMap file
-func writeFuncmap(ctx *Context, dir string) error {
-	if ctx.FuncMap == "" {
-		return nil
-	}
-	path := filepath.Join(dir, "funcmap.go")
-
-	const text = `package %s
-import "%s/template"
-var %s = template.FuncMap{}
-`
-	ttype := "html"
-	if ctx.TextTemplate {
-		ttype = "text"
-	}
-	content := fmt.Sprintf(text, ctx.PackageName, ttype, ctx.FuncMap)
-	return writeFile(path, content)
-}
+// 	c := bindata.NewConfig()
+// 	c.Debug = ctx.NoCache
+// 	c.Output = path
+// 	c.Prefix = prefix
+// 	c.Package = ctx.PackageName
+// 	c.Input = []bindata.InputConfig{
+// 		{
+// 			Path:      prefix,
+// 			Recursive: true,
+// 		},
+// 	}
+// 	return bindata.Translate(c)
+// }
 
 // create a main file
 func writeMain(ctx *Context, dir string) error {
@@ -284,11 +260,11 @@ import (
 )
 
 func main(){
-	InitTemplates()
+	t := New(nil)
 	var page PageEnum = PageInh1
-	wr := os.Stdout
+	w := os.Stdout
 
-	if err := page.Execute(wr, nil); err != nil {
+	if err := t.Execute(w, page, nil); err != nil {
 		fmt.Print(err)
 	}
 }
@@ -335,8 +311,6 @@ func subtestRun(ctx *Context, folder, root string, t *testing.T) {
 	var mapFuncs = map[string]func(*Context, string) error{
 		"tmpl":      writeTmplFolder,
 		"templates": writeTemplates,
-		"funcmap":   writeFuncmap,
-		"bindata":   writeBindata,
 		"main":      writeMain,
 		"go.mod":    writeMod,
 	}
@@ -449,9 +423,8 @@ func subtestRun(ctx *Context, folder, root string, t *testing.T) {
 // }
 
 // ctx2str returns a short string that represents the context.
-//   - am -> AssetManager : 0=none,  1=GoBindata 2=GoRice 3=Embed
+//   - am -> AssetManager : 0=none,  1=Embed
 //   - nc -> NoCache      : 0=false, 1=true
-//   - fm -> FuncMap      : 0=false, 1=true
 //   - nf -> NoGoFormat   : 0=false, 1=true
 func ctx2str(ctx *Context) string {
 	var b bytes.Buffer
@@ -472,12 +445,8 @@ func ctx2str(ctx *Context) string {
 	writeBool(ctx.NoCache)
 
 	writeSep()
-	b.WriteString("fm")
-	writeBool(ctx.FuncMap != "")
-
-	// writeSep()
-	// b.WriteString("nf")
-	// writeBool(ctx.NoGoFormat)
+	b.WriteString("nf")
+	writeBool(ctx.NoGoFormat)
 
 	// writeSep()
 	// b.WriteString("tt")
@@ -512,6 +481,7 @@ func TestRunAll(t *testing.T) {
 		Pages:           pages,
 		Templates:       templates,
 		TemplateBaseDir: templateBaseDir,
+		// NoGoFormat:      true,
 	}
 
 	// loops over context parameters
@@ -527,9 +497,9 @@ func TestRunAll(t *testing.T) {
 		} {
 			ctx.AssetManager = assetmngr
 
-			// Funcmap
-			for _, funcmap := range []string{"", "funcMap"} {
-				ctx.FuncMap = funcmap
+			// NoCache
+			for _, noGoFormat := range []bool{false, true} {
+				ctx.NoGoFormat = noGoFormat
 
 				name := ctx2str(ctx)
 				t.Run(name, func(t *testing.T) {
